@@ -7,7 +7,7 @@ export function useNetworkData() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/network-data.json")
+    fetch(`${import.meta.env.BASE_URL}network-data.json`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
