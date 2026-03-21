@@ -2,20 +2,20 @@ package devices
 
 import "github.com/jgroom/sp-network-model/schema/device"
 
-asbr1: device.#Device & {
-	hostname:  "asbr1"
+asbr2: device.#Device & {
+	hostname:  "asbr2"
 	role:      "ASBR"
-	router_id: "10.0.0.9"
+	router_id: "10.0.0.12"
 
 	interfaces: [
-		{name: "lo0", type: "loopback", ipv4: "10.0.0.9/32"},
-		{name: "eth1", type: "physical", ipv4: "10.1.0.17/31", description: "to-p3"},
-		{name: "eth2", type: "physical", ipv4: "10.1.0.19/31", description: "to-p4"},
-		{name: "eth3", type: "physical", ipv4: "203.0.113.0/31", description: "to-upstream-isp"},
+		{name: "lo0", type: "loopback", ipv4: "10.0.0.12/32"},
+		{name: "eth1", type: "physical", ipv4: "10.1.0.25/31", description: "to-p3"},
+		{name: "eth2", type: "physical", ipv4: "10.1.0.27/31", description: "to-p4"},
+		{name: "eth3", type: "physical", ipv4: "203.0.113.2/31", description: "to-upstream-isp"},
 	]
 
 	isis_config: {
-		net:   "49.0001.0000.0000.0009.00"
+		net:   "49.0001.0000.0000.0012.00"
 		level: "L2"
 		interfaces: [
 			{name: "lo0", passive: true},
@@ -28,10 +28,10 @@ asbr1: device.#Device & {
 	sr_config: {
 		srgb: {start: 16000, end: 23999}
 		srlb: {start: 15000, end: 15999}
-		node_sids: [{index: 9, prefix: "10.0.0.9/32"}]
+		node_sids: [{index: 12, prefix: "10.0.0.12/32"}]
 		adj_sids: [
-			{label: 15001, interface: "eth1", neighbor: "10.1.0.16"},
-			{label: 15002, interface: "eth2", neighbor: "10.1.0.18"},
+			{label: 15001, interface: "eth1", neighbor: "10.1.0.24"},
+			{label: 15002, interface: "eth2", neighbor: "10.1.0.26"},
 		]
 	}
 
@@ -57,7 +57,7 @@ asbr1: device.#Device & {
 			{remote: "10.0.0.5", multihop: true, profile: "bgp-multihop"},
 			{remote: "10.0.0.6", multihop: true, profile: "bgp-multihop"},
 		]
-		sbfd_reflector: {discriminator: 100009}
+		sbfd_reflector: {discriminator: 100012}
 	}
 
 	qos_config: {
@@ -115,7 +115,7 @@ asbr1: device.#Device & {
 
 	bgp_config: {
 		asn:       65000
-		router_id: "10.0.0.9"
+		router_id: "10.0.0.12"
 		graceful_restart: {restart_time: 120, stalepath_time: 360}
 		peer_groups: [
 			{
@@ -144,7 +144,7 @@ asbr1: device.#Device & {
 				description: "to-rr2"
 			},
 			{
-				address: "203.0.113.1", remote_as: 64999, peer_type: "external"
+				address: "203.0.113.3", remote_as: 64999, peer_type: "external"
 				peer_group: "EBGP-UPSTREAM"
 				address_families: ["ipv4-unicast", "ipv6-unicast"]
 				description:      "upstream-isp"
@@ -263,10 +263,10 @@ asbr1: device.#Device & {
 	// --- MACsec ---
 	macsec_config: {
 		mka_policies: [{name: "PEERING-MACSEC", cipher_suite: "gcm-aes-256", key_server_priority: 16}]
-		key_chains: [{name: "UPSTREAM-KEYS", keys: [{id: 1, key_string: "0x4153425231"}]}]
+		key_chains: [{name: "UPSTREAM-KEYS", keys: [{id: 1, key_string: "0x4153425232"}]}]
 		interfaces: [{interface: "eth3", mka_policy: "PEERING-MACSEC", key_chain: "UPSTREAM-KEYS"}]
 	}
 
 	// --- Management VRF ---
-	mgmt_vrf: {interface: "mgmt0", ipv4: "10.100.0.9/24", gateway: "10.100.0.254"}
+	mgmt_vrf: {interface: "mgmt0", ipv4: "10.100.0.12/24", gateway: "10.100.0.254"}
 }

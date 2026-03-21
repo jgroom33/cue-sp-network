@@ -1,27 +1,30 @@
 package validation
 
 // Cross-device global validation constraints — expanded topology
-// Covers all provider devices (PE, P, RR, AGG, ASBR)
-// CEs are excluded from IS-IS/SR/SRGB checks as they don't participate in the provider underlay
+// Covers all provider devices (PE, P, RR, AGG, ASBR, PCE)
+// CEs and EXTERNAL are excluded from IS-IS/SR/SRGB checks as they don't participate in the provider underlay
 
 import "github.com/jgroom/sp-network-model/devices"
 
 // All devices (for router-id uniqueness)
 _all_devices: {
-	pe1:   devices.pe1
-	pe2:   devices.pe2
-	p1:    devices.p1
-	p2:    devices.p2
-	p3:    devices.p3
-	p4:    devices.p4
-	rr1:   devices.rr1
-	rr2:   devices.rr2
-	asbr1: devices.asbr1
-	agg1:  devices.agg1
-	agg2:  devices.agg2
-	ce1:   devices.ce1
-	ce2:   devices.ce2
-	ce3:   devices.ce3
+	pe1:          devices.pe1
+	pe2:          devices.pe2
+	p1:           devices.p1
+	p2:           devices.p2
+	p3:           devices.p3
+	p4:           devices.p4
+	rr1:          devices.rr1
+	rr2:          devices.rr2
+	asbr1:        devices.asbr1
+	asbr2:        devices.asbr2
+	agg1:         devices.agg1
+	agg2:         devices.agg2
+	pce1:         devices.pce1
+	isp_upstream: devices.isp_upstream
+	ce1:          devices.ce1
+	ce2:          devices.ce2
+	ce3:          devices.ce3
 }
 
 // Provider devices only (IS-IS + SR domain)
@@ -35,18 +38,23 @@ _provider_devices: {
 	rr1:   devices.rr1
 	rr2:   devices.rr2
 	asbr1: devices.asbr1
+	asbr2: devices.asbr2
 	agg1:  devices.agg1
 	agg2:  devices.agg2
+	pce1:  devices.pce1
 }
 
 // BGP-speaking devices
 _bgp_devices: {
-	pe1:   devices.pe1
-	pe2:   devices.pe2
-	rr1:   devices.rr1
-	rr2:   devices.rr2
-	asbr1: devices.asbr1
-	ce1:   devices.ce1
+	pe1:          devices.pe1
+	pe2:          devices.pe2
+	rr1:          devices.rr1
+	rr2:          devices.rr2
+	asbr1:        devices.asbr1
+	asbr2:        devices.asbr2
+	pce1:         devices.pce1
+	isp_upstream: devices.isp_upstream
+	ce1:          devices.ce1
 }
 
 // 1. SRGB must be identical across the SR domain
@@ -93,6 +101,8 @@ _ibgp_asn_consistency: {
 	rr1:   devices.rr1.bgp_config.asn & 65000
 	rr2:   devices.rr2.bgp_config.asn & 65000
 	asbr1: devices.asbr1.bgp_config.asn & 65000
+	asbr2: devices.asbr2.bgp_config.asn & 65000
+	pce1:  devices.pce1.bgp_config.asn & 65000
 }
 
 // 7. SBFD discriminators must be unique across the SR domain
@@ -131,4 +141,17 @@ _ce1_handoff_consistency: {
 _ospf_router_id_uniqueness: {
 	(devices.ce3.ospf_config.router_id):                                          "ce3"
 	(devices.pe2.handoff_config.handoffs[1].ospf_routing.config.router_id): "pe2"
+}
+
+// 12. ASBR redundancy: both ASBRs must have eBGP to upstream
+_asbr_redundancy: {
+	_asbr1_ebgp: [ for n in devices.asbr1.bgp_config.neighbors if n.peer_type == "external" {n}]
+	_asbr2_ebgp: [ for n in devices.asbr2.bgp_config.neighbors if n.peer_type == "external" {n}]
+}
+
+// 13. CoPP coverage: all provider devices must have copp_config
+_copp_coverage: {
+	for _name, _dev in _provider_devices {
+		(_name): _dev.copp_config.enabled & true
+	}
 }

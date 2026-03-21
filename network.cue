@@ -1,6 +1,6 @@
 package network
 
-// Top-level network model — 14 devices, 12 protocol schemas
+// Top-level network model — 17 devices, 12+ protocol schemas
 
 import (
 	"github.com/jgroom/sp-network-model/topology"
@@ -26,11 +26,16 @@ network: {
 		// Route Reflectors
 		rr1: devices.rr1
 		rr2: devices.rr2
-		// AS Border Router
+		// AS Border Routers
 		asbr1: devices.asbr1
+		asbr2: devices.asbr2
 		// Aggregation
 		agg1: devices.agg1
 		agg2: devices.agg2
+		// Path Computation Element
+		pce1: devices.pce1
+		// External
+		isp_upstream: devices.isp_upstream
 		// Customer Edge
 		ce1: devices.ce1
 		ce2: devices.ce2

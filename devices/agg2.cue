@@ -92,6 +92,48 @@ agg2: device.#Device & {
 		interfaces: [{name: "eth1"}, {name: "eth2"}]
 	}
 
+	// --- ACL ---
+	acl_config: {
+		acls: [
+			{
+				name: "INFRASTRUCTURE-PROTECT", type: "ipv4-extended"
+				entries: [
+					{sequence: 10, action: "permit", match: {protocol: "tcp", dst_port: 179}, description: "allow-bgp"},
+					{sequence: 20, action: "permit", match: {protocol: "ospf"}, description: "allow-ospf"},
+					{sequence: 30, action: "permit", match: {protocol: 89}, description: "allow-ospf-proto"},
+					{sequence: 40, action: "permit", match: {protocol: "udp", dst_port: 3784}, description: "allow-bfd-single"},
+					{sequence: 50, action: "permit", match: {protocol: "udp", dst_port: 4784}, description: "allow-bfd-multi"},
+					{sequence: 60, action: "permit", match: {protocol: "icmp"}, description: "allow-icmp"},
+					{sequence: 70, action: "permit", match: {protocol: "udp", dst_port: 646}, description: "allow-ldp"},
+					{sequence: 100, action: "deny", match: {}, description: "deny-all-else", log: true},
+				]
+			},
+		]
+	}
+
+	// --- CoPP ---
+	copp_config: {
+		policy: {
+			name: "COPP-STANDARD"
+			entries: [
+				{protocol_class: "bgp", policer: {cir: 10000, cbs: 8192}},
+				{protocol_class: "ospf", policer: {cir: 10000, cbs: 8192}},
+				{protocol_class: "isis", policer: {cir: 10000, cbs: 8192}},
+				{protocol_class: "bfd", policer: {cir: 5000, cbs: 4096}},
+				{protocol_class: "icmp", policer: {cir: 2000, cbs: 4096}},
+				{protocol_class: "ssh", policer: {cir: 1000, cbs: 2048}},
+				{protocol_class: "snmp", policer: {cir: 2000, cbs: 4096}},
+				{protocol_class: "ntp", policer: {cir: 1000, cbs: 2048}},
+				{protocol_class: "lldp", policer: {cir: 1000, cbs: 2048}},
+				{protocol_class: "arp", policer: {cir: 2000, cbs: 4096}},
+				{protocol_class: "default", policer: {cir: 500, cbs: 2048, exceed_action: "drop"}},
+			]
+		}
+	}
+
+	// --- Management VRF ---
+	mgmt_vrf: {interface: "mgmt0", ipv4: "10.100.0.11/24", gateway: "10.100.0.254"}
+
 	// 802.1ad: NNI toward PE2, S-UNI toward CE3
 	dot1ad_config: {
 		interfaces: [

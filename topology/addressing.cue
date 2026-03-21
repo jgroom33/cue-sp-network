@@ -15,6 +15,8 @@ loopbacks: {
 	asbr1: "10.0.0.9"
 	agg1:  "10.0.0.10"
 	agg2:  "10.0.0.11"
+	asbr2: "10.0.0.12"
+	pce1:  "10.0.0.13"
 	ce1:   "192.168.1.1"
 	ce2:   "192.168.2.1"
 	ce3:   "192.168.3.1"
@@ -40,14 +42,18 @@ p2p_subnets: {
 	"p1-p3":     "10.1.0.10/31"
 	"p2-p4":     "10.1.0.12/31"
 	"p3-p4":     "10.1.0.14/31"
-	// ASBR
+	// ASBR1
 	"p3-asbr1":  "10.1.0.16/31"
 	"p4-asbr1":  "10.1.0.18/31"
 	// Aggregation
 	"pe1-agg1":  "10.1.0.20/31"
 	"pe2-agg2":  "10.1.0.22/31"
+	// ASBR2
+	"p3-asbr2":  "10.1.0.24/31"
+	"p4-asbr2":  "10.1.0.26/31"
 	// Peering
 	"asbr1-upstream": "203.0.113.0/31"
+	"asbr2-upstream": "203.0.113.2/31"
 }
 
 // Customer/access subnets
@@ -56,6 +62,9 @@ customer_subnets: {
 	"agg1-ce2":       "10.2.1.0/31"
 	"agg2-ce3":       "10.2.2.0/31"
 }
+
+// Management subnet
+management_subnet: "10.100.0.0/24"
 
 // Autonomous system numbers
 sp_asn:       65000
