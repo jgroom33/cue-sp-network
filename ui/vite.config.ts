@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: '/cue-sp-network/',
+  base: './',
   build: {
     outDir: '../docs',
     emptyOutDir: true,
