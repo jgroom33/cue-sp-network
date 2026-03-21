@@ -26,6 +26,9 @@ import (
 	"github.com/jgroom/sp-network-model/schema/rpki"
 	"github.com/jgroom/sp-network-model/schema/macsec"
 	"github.com/jgroom/sp-network-model/schema/flowspec"
+	"github.com/jgroom/sp-network-model/schema/ldp"
+	"github.com/jgroom/sp-network-model/schema/ntp"
+	"github.com/jgroom/sp-network-model/schema/netflow"
 )
 
 #Device: {
@@ -57,6 +60,9 @@ import (
 	rpki_config?:         rpki.#RPKIConfig
 	macsec_config?:       macsec.#MACsecConfig
 	flowspec_config?:     flowspec.#FlowspecConfig
+	ldp_config?:          ldp.#LDPConfig
+	ntp_config?:          ntp.#NTPConfig
+	netflow_config?:      netflow.#NetflowConfig
 	static_routes?:       [...common.#StaticRoute]
 	mgmt_vrf?:            common.#ManagementVRF
 
@@ -74,6 +80,7 @@ import (
 		acl_config:          acl.#ACLConfig
 		copp_config:         copp.#CoPPConfig
 		route_policy_config: route_policy.#RoutePolicyConfig
+		ntp_config:          ntp.#NTPConfig
 	}
 
 	// --- P: underlay + security ---
@@ -86,6 +93,7 @@ import (
 		lldp_config:  lldp.#LLDPConfig
 		acl_config:   acl.#ACLConfig
 		copp_config:  copp.#CoPPConfig
+		ntp_config:   ntp.#NTPConfig
 	}
 
 	// --- RR: underlay + BGP RR + security + RPKI ---
@@ -101,6 +109,7 @@ import (
 		copp_config:         copp.#CoPPConfig
 		route_policy_config: route_policy.#RoutePolicyConfig
 		rpki_config:         rpki.#RPKIConfig
+		ntp_config:          ntp.#NTPConfig
 	}
 
 	// --- AGG: underlay + 802.1ad NNI + security ---
@@ -114,6 +123,7 @@ import (
 		dot1ad_config: dot1ad.#Dot1adConfig
 		acl_config:    acl.#ACLConfig
 		copp_config:   copp.#CoPPConfig
+		ntp_config:    ntp.#NTPConfig
 	}
 
 	// --- ASBR: underlay + BGP + security + RPKI ---
@@ -129,6 +139,7 @@ import (
 		copp_config:         copp.#CoPPConfig
 		route_policy_config: route_policy.#RoutePolicyConfig
 		rpki_config:         rpki.#RPKIConfig
+		ntp_config:          ntp.#NTPConfig
 	}
 
 	// --- PCE: underlay + BGP-LS + security ---
@@ -141,6 +152,7 @@ import (
 		bgp_config:  bgp.#BGPConfig
 		acl_config:  acl.#ACLConfig
 		copp_config: copp.#CoPPConfig
+		ntp_config:  ntp.#NTPConfig
 	}
 
 	// --- EXTERNAL: minimal — BGP + LLDP only ---

@@ -1,7 +1,8 @@
 package ospf
 
 // OSPF schema per RFC 2328 (OSPFv2), RFC 5340 (OSPFv3),
-// RFC 4577 (OSPF as PE-CE protocol), RFC 3101 (NSSA), RFC 1765 (stub areas)
+// RFC 4577 (OSPF as PE-CE protocol), RFC 3101 (NSSA), RFC 1765 (stub areas),
+// RFC 3623 (Graceful Restart), RFC 6987 (Stub Router)
 
 import "github.com/jgroom/sp-network-model/schema/common"
 
@@ -76,6 +77,19 @@ import "github.com/jgroom/sp-network-model/schema/common"
 	tag?:        int & >=0 & <=4294967295                  // RFC 2328 Section A.4.5
 }
 
+// OSPF Graceful Restart — RFC 3623
+#OSPFGracefulRestart: {
+	enabled:      bool | *true
+	restart_time: int & >=1 & <=1800 | *120  // seconds — RFC 3623 Section 4
+	helper_mode:  bool | *true                // act as helper for neighbors
+}
+
+// Stub router advertisement — RFC 6987
+#StubRouter: {
+	on_startup?: int & >=5 & <=86400          // seconds to advertise max-metric after startup
+	always?:     bool | *false                // permanently advertise max-metric
+}
+
 // Device-level OSPF configuration
 #OSPFConfig: {
 	enabled:   bool | *true
@@ -100,4 +114,10 @@ import "github.com/jgroom/sp-network-model/schema/common"
 	max_lsa?: int & >=1 & <=4294967295
 	// Reference bandwidth for auto-cost (kbps) — RFC 2328 Section 12.4.1
 	reference_bandwidth?: int & >=1 & <=4294967295
+	// Graceful Restart — RFC 3623
+	graceful_restart?: #OSPFGracefulRestart
+	// Stub Router — RFC 6987
+	stub_router?: #StubRouter
+	// SPF max wait for exponential backoff (milliseconds)
+	spf_max_wait?: int & >=0 & <=600000
 }

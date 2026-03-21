@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.3.0] - 2026-03-21
+
+### Schema enhancements (Phase 1)
+
+- **BGP**: Added `maximum_prefix`, `timers` (keepalive/holdtime/connect), `ttl_security`, `shutdown`, `multihop` to `#BGPNeighbor` and `#PeerGroup` — RFC 4271/5082
+- **IS-IS**: Added SPF throttle timers (`spf_initial_delay`/`spf_second_delay`/`spf_max_wait`), LSP generation timers, `max_lsp_lifetime`, `hostname_dynamic`, per-interface `hello_interval`/`hello_multiplier` — RFC 5301
+- **OSPF**: Added `#OSPFGracefulRestart` (RFC 3623), `#StubRouter` (RFC 6987), `spf_max_wait`
+- All 13 provider devices now have IS-IS MD5 authentication enabled
+- eBGP neighbors on ASBRs have `maximum_prefix: 500000`; PE→CE neighbors have `maximum_prefix: 1000`
+
+### New protocol schemas (Phase 2)
+
+- **LDP** (`schema/ldp/`): Label Distribution Protocol per RFC 5036/5561/5918 — interfaces, targeted neighbors, sessions, graceful restart, IGP sync
+- **NTP** (`schema/ntp/`): Network Time Protocol per RFC 5905 — servers, peers, authentication, access control
+- **Netflow/IPFIX** (`schema/netflow/`): Flow monitoring per RFC 7011/5101 — samplers, records, exporters, monitors, interface bindings
+- NTP is now mandatory for all provider device roles; all 13 provider devices configured with dual NTP servers
+
+### New validation constraints (14–18)
+
+- SRLB range consistency (15000–15999) across SR domain
+- IS-IS authentication coverage on all provider devices
+- NTP coverage on all provider devices
+- Management VRF consistency (MGMT VRF on all provider devices)
+- Loopback /32 prefix enforcement
+
+### UI updates
+
+- Validation dashboard now shows 18 health checks (up from 13)
+- TypeScript types updated for new schema fields (IS-IS auth, NTP, LDP, Netflow)
+
 ## [0.2.0] - 2026-03-21
 
 ### Added

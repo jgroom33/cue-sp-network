@@ -23,6 +23,7 @@ pe2: device.#Device & {
 	isis_config: {
 		net:   "49.0001.0000.0000.0002.00"
 		level: "L2"
+		authentication: {type: "md5", key: "ISIS-KEY-1", key_id: 1}
 		interfaces: [
 			{name: "lo0", passive: true},
 			{name: "eth1", metric: 10},
@@ -199,7 +200,7 @@ pe2: device.#Device & {
 		neighbors: [
 			{address: "10.0.0.5", remote_as: 65000, peer_type: "internal", peer_group: "IBGP-RR", update_source: "lo0", address_families: ["ipv4-unicast", "l3vpn-ipv4", "evpn"], description: "to-rr1"},
 			{address: "10.0.0.6", remote_as: 65000, peer_type: "internal", peer_group: "IBGP-RR", update_source: "lo0", address_families: ["ipv4-unicast", "l3vpn-ipv4", "evpn"], description: "to-rr2"},
-			{address: "10.2.0.10", remote_as: 65001, peer_type: "external", peer_group: "EBGP-CE", address_families: ["ipv4-unicast"], description: "to-ce1", vrf: "CUSTOMER-A", bfd: true},
+			{address: "10.2.0.10", remote_as: 65001, peer_type: "external", peer_group: "EBGP-CE", address_families: ["ipv4-unicast"], description: "to-ce1", vrf: "CUSTOMER-A", bfd: true, maximum_prefix: 1000},
 		]
 		l3vpns: [{
 			name: "CUSTOMER-B", rd: "65000:200"
@@ -332,6 +333,16 @@ pe2: device.#Device & {
 
 	// --- Management VRF ---
 	mgmt_vrf: {interface: "mgmt0", ipv4: "10.100.0.2/24", gateway: "10.100.0.254"}
+
+	// --- NTP ---
+	ntp_config: {
+		servers: [
+			{address: "10.100.0.200", prefer: true, iburst: true, key_id: 1, vrf: "MGMT"},
+			{address: "10.100.0.201", iburst: true, key_id: 1, vrf: "MGMT"},
+		]
+		authentication: [{key_id: 1, type: "sha256", key: "NTP-AUTH-KEY-1"}]
+		source_interface: "lo0"
+	}
 
 	// --- CE Handoff --- (PE side)
 	handoff_config: {

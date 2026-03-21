@@ -1,4 +1,4 @@
-import type { ValidationRule } from "../types";
+import type { ValidationRule, ISISConfig } from "../types";
 import type { Topology, Device } from "../types";
 import { toConfigKey } from "../utils/graph";
 
@@ -271,6 +271,98 @@ function computeValidations(
       description: "All provider devices have CoPP enabled",
       status: missing.length === 0 ? "pass" : "fail",
       affectedDevices: missing,
+    });
+  }
+
+  // 14. SRLB consistency
+  {
+    const wrong: string[] = [];
+    for (const dev of providerDevices) {
+      const cfg = configs[toConfigKey(dev)];
+      if (cfg?.sr_config?.enabled) {
+        if (cfg.sr_config.srlb.start !== 15000 || cfg.sr_config.srlb.end !== 15999) {
+          wrong.push(dev);
+        }
+      }
+    }
+    rules.push({
+      name: "SRLB Consistency",
+      description: "All SR devices use SRLB 15000-15999",
+      status: wrong.length === 0 ? "pass" : "fail",
+      affectedDevices: wrong,
+    });
+  }
+
+  // 15. IS-IS authentication coverage
+  {
+    const missing: string[] = [];
+    for (const dev of providerDevices) {
+      const cfg = configs[toConfigKey(dev)];
+      if (cfg?.isis_config && !(cfg.isis_config as ISISConfig).authentication) {
+        missing.push(dev);
+      }
+    }
+    rules.push({
+      name: "IS-IS Authentication",
+      description: "All provider devices have IS-IS MD5 auth",
+      status: missing.length === 0 ? "pass" : "fail",
+      affectedDevices: missing,
+    });
+  }
+
+  // 16. NTP coverage
+  {
+    const missing: string[] = [];
+    for (const dev of providerDevices) {
+      const cfg = configs[toConfigKey(dev)];
+      if (!cfg?.ntp_config) {
+        missing.push(dev);
+      }
+    }
+    rules.push({
+      name: "NTP Coverage",
+      description: "All provider devices have NTP configured",
+      status: missing.length === 0 ? "pass" : "fail",
+      affectedDevices: missing,
+    });
+  }
+
+  // 17. Management VRF consistency
+  {
+    const missing: string[] = [];
+    for (const dev of providerDevices) {
+      const cfg = configs[toConfigKey(dev)];
+      if (!cfg?.mgmt_vrf) {
+        missing.push(dev);
+      }
+    }
+    rules.push({
+      name: "Management VRF",
+      description: "All provider devices have MGMT VRF configured",
+      status: missing.length === 0 ? "pass" : "fail",
+      affectedDevices: missing,
+    });
+  }
+
+  // 18. Loopback /32 prefix
+  {
+    const wrong: string[] = [];
+    for (const dev of providerDevices) {
+      const cfg = configs[toConfigKey(dev)];
+      if (cfg) {
+        for (const iface of cfg.interfaces) {
+          if (iface.type === "loopback" && iface.ipv4 && !iface.ipv4.endsWith("/32")) {
+            wrong.push(dev);
+            break;
+          }
+        }
+      }
+    }
+    rules.push({
+      name: "Loopback /32 Prefix",
+      description: "All provider loopbacks use /32 prefix length",
+      status: wrong.length === 0 ? "pass" : "fail",
+      affectedDevices: wrong,
     });
   }
 

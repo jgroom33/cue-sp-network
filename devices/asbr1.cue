@@ -17,6 +17,7 @@ asbr1: device.#Device & {
 	isis_config: {
 		net:   "49.0001.0000.0000.0009.00"
 		level: "L2"
+		authentication: {type: "md5", key: "ISIS-KEY-1", key_id: 1}
 		interfaces: [
 			{name: "lo0", passive: true},
 			{name: "eth1", metric: 20},
@@ -152,6 +153,7 @@ asbr1: device.#Device & {
 				authentication: {key: "UPSTREAM-SECRET-KEY"}
 				import_policy: "EBGP-INGRESS"
 				export_policy: "EBGP-EGRESS"
+				maximum_prefix: 500000
 			},
 		]
 	}
@@ -265,6 +267,16 @@ asbr1: device.#Device & {
 		mka_policies: [{name: "PEERING-MACSEC", cipher_suite: "gcm-aes-256", key_server_priority: 16}]
 		key_chains: [{name: "UPSTREAM-KEYS", keys: [{id: 1, key_string: "0x4153425231"}]}]
 		interfaces: [{interface: "eth3", mka_policy: "PEERING-MACSEC", key_chain: "UPSTREAM-KEYS"}]
+	}
+
+	// --- NTP ---
+	ntp_config: {
+		servers: [
+			{address: "10.100.0.200", prefer: true, iburst: true, key_id: 1, vrf: "MGMT"},
+			{address: "10.100.0.201", iburst: true, key_id: 1, vrf: "MGMT"},
+		]
+		authentication: [{key_id: 1, type: "sha256", key: "NTP-AUTH-KEY-1"}]
+		source_interface: "lo0"
 	}
 
 	// --- Management VRF ---

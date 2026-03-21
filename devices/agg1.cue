@@ -17,6 +17,7 @@ agg1: device.#Device & {
 	isis_config: {
 		net:   "49.0001.0000.0000.0010.00"
 		level: "L1L2"
+		authentication: {type: "md5", key: "ISIS-KEY-1", key_id: 1}
 		interfaces: [
 			{name: "lo0", passive: true},
 			{name: "eth1", level: "L2", metric: 10},
@@ -129,6 +130,16 @@ agg1: device.#Device & {
 				{protocol_class: "default", policer: {cir: 500, cbs: 2048, exceed_action: "drop"}},
 			]
 		}
+	}
+
+	// --- NTP ---
+	ntp_config: {
+		servers: [
+			{address: "10.100.0.200", prefer: true, iburst: true, key_id: 1, vrf: "MGMT"},
+			{address: "10.100.0.201", iburst: true, key_id: 1, vrf: "MGMT"},
+		]
+		authentication: [{key_id: 1, type: "sha256", key: "NTP-AUTH-KEY-1"}]
+		source_interface: "lo0"
 	}
 
 	// --- Management VRF ---

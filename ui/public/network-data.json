@@ -444,6 +444,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -639,7 +644,8 @@
                             "send_community": "both",
                             "next_hop_self": false,
                             "bfd": true,
-                            "vrf": "CUSTOMER-A"
+                            "vrf": "CUSTOMER-A",
+                            "maximum_prefix": 1000
                         }
                     ],
                     "is_route_reflector": false,
@@ -1620,6 +1626,38 @@
                     "ipv4": "10.100.0.1/24",
                     "gateway": "10.100.0.254"
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "route_policy_config": {
                     "prefix_lists": [],
                     "community_lists": [
@@ -1781,6 +1819,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -1976,7 +2019,8 @@
                             "send_community": "both",
                             "next_hop_self": false,
                             "bfd": true,
-                            "vrf": "CUSTOMER-A"
+                            "vrf": "CUSTOMER-A",
+                            "maximum_prefix": 1000
                         }
                     ],
                     "is_route_reflector": false,
@@ -3001,6 +3045,38 @@
                     "ipv4": "10.100.0.2/24",
                     "gateway": "10.100.0.254"
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "route_policy_config": {
                     "prefix_lists": [],
                     "community_lists": [
@@ -3140,6 +3216,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -3677,6 +3758,38 @@
                         ]
                     }
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",
                     "interface": "mgmt0",
@@ -3771,6 +3884,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -4308,6 +4426,38 @@
                         ]
                     }
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",
                     "interface": "mgmt0",
@@ -4402,6 +4552,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -4926,6 +5081,38 @@
                         ]
                     }
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",
                     "interface": "mgmt0",
@@ -5020,6 +5207,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -5544,6 +5736,38 @@
                         ]
                     }
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",
                     "interface": "mgmt0",
@@ -5578,6 +5802,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -6085,6 +6314,38 @@
                         "ipv6-unicast"
                     ]
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",
                     "interface": "mgmt0",
@@ -6119,6 +6380,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -6626,6 +6892,38 @@
                         "ipv6-unicast"
                     ]
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",
                     "interface": "mgmt0",
@@ -6698,6 +6996,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -7130,7 +7433,8 @@
                                 "key": "UPSTREAM-SECRET-KEY"
                             },
                             "import_policy": "EBGP-INGRESS",
-                            "export_policy": "EBGP-EGRESS"
+                            "export_policy": "EBGP-EGRESS",
+                            "maximum_prefix": 500000
                         }
                     ],
                     "is_route_reflector": false,
@@ -7541,6 +7845,38 @@
                         }
                     ]
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",
                     "interface": "mgmt0",
@@ -7613,6 +7949,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -8045,7 +8386,8 @@
                                 "key": "UPSTREAM-SECRET-KEY"
                             },
                             "import_policy": "EBGP-INGRESS",
-                            "export_policy": "EBGP-EGRESS"
+                            "export_policy": "EBGP-EGRESS",
+                            "maximum_prefix": 500000
                         }
                     ],
                     "is_route_reflector": false,
@@ -8456,6 +8798,38 @@
                         }
                     ]
                 },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",
                     "interface": "mgmt0",
@@ -8513,6 +8887,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -9009,6 +9388,38 @@
                     "interface": "mgmt0",
                     "ipv4": "10.100.0.10/24",
                     "gateway": "10.100.0.254"
+                },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
                 }
             },
             "agg2": {
@@ -9061,6 +9472,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -9557,6 +9973,38 @@
                     "interface": "mgmt0",
                     "ipv4": "10.100.0.11/24",
                     "gateway": "10.100.0.254"
+                },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
                 }
             },
             "pce1": {
@@ -9586,6 +10034,11 @@
                             "network_type": "point-to-point"
                         }
                     ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
                     "lsp_mtu": 1492,
                     "overload_bit": false
                 },
@@ -9926,6 +10379,38 @@
                             }
                         ]
                     }
+                },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
                 },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",

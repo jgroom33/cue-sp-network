@@ -3,7 +3,7 @@ package bgp
 // BGP schema per RFC 4271 / RFC 4456 (RR) / RFC 4364 (L3VPN) / RFC 7432 (EVPN)
 // RFC 1997 (communities), RFC 4360 (extended), RFC 8092 (large communities)
 // RFC 2385 (TCP MD5), RFC 4724/8538 (Graceful Restart), RFC 7911 (ADD-PATH)
-// RFC 8669 (BGP Prefix-SID)
+// RFC 8669 (BGP Prefix-SID), RFC 5082 (TTL Security)
 
 import "github.com/jgroom/sp-network-model/schema/common"
 
@@ -20,6 +20,14 @@ import "github.com/jgroom/sp-network-model/schema/common"
 #BGPAuthentication: {
 	key:    string
 	key_id?: int & >=0 & <=255
+}
+
+// BGP Timers — RFC 4271 Section 10
+#BGPTimers: {
+	keepalive:  int & >=0 & <=65535 | *60    // seconds
+	holdtime:   int & >=0 & <=65535 | *180   // seconds; 0 = hold timer disabled
+	connect:    int & >=1 & <=65535 | *30    // connect retry seconds
+	// holdtime must be 0 or >= 3*keepalive
 }
 
 // Graceful Restart — RFC 4724, RFC 8538
@@ -57,6 +65,8 @@ import "github.com/jgroom/sp-network-model/schema/common"
 	next_hop_self:          bool | *false
 	authentication?:        #BGPAuthentication
 	graceful_restart?:      #GracefulRestart
+	timers?: #BGPTimers
+	maximum_prefix?: int & >=1 & <=4294967295
 }
 
 // BGP neighbor
@@ -80,6 +90,18 @@ import "github.com/jgroom/sp-network-model/schema/common"
 	// Route policy references
 	import_policy?:         string                    // route-map name
 	export_policy?:         string                    // route-map name
+	// Prefix limits — critical for eBGP protection
+	maximum_prefix?: int & >=1 & <=4294967295
+	maximum_prefix_warning_pct?: int & >=1 & <=100 | *75
+	maximum_prefix_restart?: int & >=1 & <=65535  // restart timer in minutes
+	// Timers — RFC 4271 Section 10
+	timers?: #BGPTimers
+	// Admin state
+	shutdown?: bool | *false
+	// TTL security — RFC 5082
+	ttl_security?: int & >=1 & <=255
+	// Multihop — explicit TTL for eBGP multihop
+	multihop?: { enabled: bool | *false, ttl: int & >=1 & <=255 | *255 }
 }
 
 // Community definitions — RFC 1997 / RFC 4360 / RFC 8092

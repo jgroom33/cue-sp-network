@@ -99,6 +99,9 @@ export interface Device {
   l2qos_config?: L2QoSConfig;
   handoff_config?: HandoffConfig;
   ospf_config?: OSPFConfig;
+  ntp_config?: NTPConfig;
+  ldp_config?: LDPConfig;
+  netflow_config?: NetflowConfig;
   static_routes?: StaticRoute[];
 }
 
@@ -115,8 +118,14 @@ export interface ISISConfig {
   net: string;
   level: string;
   interfaces: ISISInterface[];
+  authentication?: { type: string; key: string; key_id?: number };
   lsp_mtu: number;
   overload_bit: boolean;
+  spf_initial_delay?: number;
+  spf_second_delay?: number;
+  spf_max_wait?: number;
+  max_lsp_lifetime?: number;
+  hostname_dynamic?: boolean;
 }
 
 export interface ISISInterface {
@@ -698,6 +707,30 @@ export interface StaticRoute {
   next_hop: string;
   metric?: number;
   description?: string;
+}
+
+// NTP
+export interface NTPConfig {
+  enabled: boolean;
+  servers: { address: string; prefer?: boolean; version: number; key_id?: number; iburst?: boolean; vrf?: string }[];
+  peers?: { address: string; version: number }[];
+  authentication?: { key_id: number; type: string; key: string }[];
+  source_interface?: string;
+}
+
+// LDP
+export interface LDPConfig {
+  enabled: boolean;
+  router_id: string;
+  interfaces: { name: string }[];
+  igp_sync: boolean;
+}
+
+// Netflow/IPFIX
+export interface NetflowConfig {
+  enabled: boolean;
+  exporters: { name: string; destination: string; port: number; version: string }[];
+  monitors: { name: string; record: string }[];
 }
 
 // Validation

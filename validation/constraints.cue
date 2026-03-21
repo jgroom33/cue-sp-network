@@ -155,3 +155,40 @@ _copp_coverage: {
 		(_name): _dev.copp_config.enabled & true
 	}
 }
+
+// 14. SRLB consistency: all provider devices must use same SRLB range (15000-15999)
+_srlb_consistency: {
+	for _name, _dev in _provider_devices {
+		(_name): _dev.sr_config.srlb & {start: 15000, end: 15999}
+	}
+}
+
+// 15. IS-IS authentication: all provider devices must have IS-IS auth enabled
+_isis_auth_coverage: {
+	for _name, _dev in _provider_devices {
+		(_name): _dev.isis_config.authentication.type & "md5"
+	}
+}
+
+// 16. Loopback /32: all provider loopback interfaces must use /32 prefix
+_loopback_prefix: {
+	for _name, _dev in _provider_devices {
+		(_name): [ for _iface in _dev.interfaces if _iface.type == "loopback" && _iface.ipv4 != _|_ {
+			_iface.ipv4 & =~"/32$"
+		}]
+	}
+}
+
+// 17. NTP coverage: all provider devices must have NTP configured
+_ntp_coverage: {
+	for _name, _dev in _provider_devices {
+		(_name): _dev.ntp_config.enabled & true
+	}
+}
+
+// 18. Management VRF consistency: all provider devices must have mgmt_vrf
+_mgmt_vrf_coverage: {
+	for _name, _dev in _provider_devices {
+		(_name): _dev.mgmt_vrf.vrf_name & "MGMT"
+	}
+}
