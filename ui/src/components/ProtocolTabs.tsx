@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Device } from "../types";
 
 interface Props {
@@ -68,6 +68,12 @@ export default function ProtocolTabs({ device }: Props) {
   const availableTabs = tabs.filter((t) => t.available);
   const [activeTab, setActiveTab] = useState<TabId>(availableTabs[0]?.id || "isis");
 
+  // Reset active tab when device changes
+  useEffect(() => {
+    const firstAvailable = tabs.find((t) => t.available)?.id;
+    if (firstAvailable) setActiveTab(firstAvailable);
+  }, [device.hostname]);
+
   if (availableTabs.length === 0) {
     return <div className="text-gray-500 text-sm p-4">No protocol configurations</div>;
   }
@@ -89,7 +95,11 @@ export default function ProtocolTabs({ device }: Props) {
           </button>
         ))}
       </div>
-      <div className="text-sm">{renderTabContent(activeTab, device)}</div>
+      <div className="text-sm">
+        {availableTabs.some((t) => t.id === activeTab)
+          ? renderTabContent(activeTab, device)
+          : null}
+      </div>
     </div>
   );
 }
