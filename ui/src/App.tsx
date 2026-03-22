@@ -1,12 +1,9 @@
 import { useState, useCallback, useMemo, useReducer } from "react";
 import { useNetworkData } from "./hooks/useNetworkData";
 import type { DeviceRole, LinkType, OverlayType } from "./types";
-import { toConfigKey } from "./utils/graph";
 import { buildOverlayData } from "./utils/overlays";
 import TopologyGraph from "./components/TopologyGraph";
-import DevicePanel from "./components/DevicePanel";
 import Sidebar from "./components/Sidebar";
-import ValidationDashboard from "./components/ValidationDashboard";
 import {
   EducationalPanel,
   PacketAnimationLayer,
@@ -24,8 +21,6 @@ export default function App() {
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [visibleRoles, setVisibleRoles] = useState<Set<DeviceRole>>(new Set(ALL_ROLES));
   const [visibleLinkTypes, setVisibleLinkTypes] = useState<Set<LinkType>>(new Set(ALL_LINK_TYPES));
-  const [highlightedDevices, setHighlightedDevices] = useState<Set<string> | null>(null);
-  const [activeView, setActiveView] = useState<"devices" | "validation" | "educational">("devices");
   const [activeOverlays, setActiveOverlays] = useState<Set<OverlayType>>(new Set());
   const [eduState, eduDispatch] = useReducer(educationalReducer, initialEducationalState);
   const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map());
@@ -89,12 +84,10 @@ export default function App() {
   }
 
   const { topo, device_configs } = data.network;
-  const selectedConfig =
-    selectedDevice ? device_configs[toConfigKey(selectedDevice)] : null;
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-950">
-      {/* Sidebar */}
+      {/* Sidebar — topology controls */}
       <div className="w-64 flex-shrink-0 flex flex-col">
         <Sidebar
           topo={topo}
@@ -105,23 +98,9 @@ export default function App() {
           onToggleRole={toggleRole}
           visibleLinkTypes={visibleLinkTypes}
           onToggleLinkType={toggleLinkType}
-          onHighlightDevices={setHighlightedDevices}
-          activeView={activeView}
-          onSetView={setActiveView}
           activeOverlays={activeOverlays}
           onToggleOverlay={toggleOverlay}
         />
-        {/* Validation dashboard below sidebar when in validation view */}
-        {activeView === "validation" && (
-          <div className="border-t border-gray-700 overflow-y-auto flex-1 bg-gray-900">
-            <ValidationDashboard
-              topo={topo}
-              configs={device_configs}
-              onHighlightDevices={setHighlightedDevices}
-              onSelectDevice={setSelectedDevice}
-            />
-          </div>
-        )}
       </div>
 
       {/* Main graph area */}
@@ -133,12 +112,12 @@ export default function App() {
           onSelectDevice={setSelectedDevice}
           visibleRoles={visibleRoles}
           visibleLinkTypes={visibleLinkTypes}
-          highlightedDevices={highlightedDevices}
+          highlightedDevices={null}
           overlayData={overlayData!}
           activeOverlays={activeOverlays}
           onNodePositionsUpdate={setNodePositions}
           educationalOverlay={
-            activeView === "educational" && eduState.activeScenario ? (
+            eduState.activeScenario ? (
               <>
                 <ServiceOverlay
                   scenario={eduState.activeScenario}
@@ -161,24 +140,15 @@ export default function App() {
         />
       </div>
 
-      {/* Right panel: device detail or educational */}
-      {activeView === "educational" ? (
-        <div className="flex-shrink-0">
-          <EducationalPanel
-            topo={topo}
-            configs={device_configs}
-            state={eduState}
-            dispatch={eduDispatch}
-          />
-        </div>
-      ) : selectedConfig ? (
-        <div className="w-96 flex-shrink-0">
-          <DevicePanel
-            device={selectedConfig}
-            onClose={() => setSelectedDevice(null)}
-          />
-        </div>
-      ) : null}
+      {/* Educational panel — always visible */}
+      <div className="flex-shrink-0">
+        <EducationalPanel
+          topo={topo}
+          configs={device_configs}
+          state={eduState}
+          dispatch={eduDispatch}
+        />
+      </div>
     </div>
   );
 }

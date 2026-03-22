@@ -12,9 +12,6 @@ interface Props {
   onToggleRole: (role: DeviceRole) => void;
   visibleLinkTypes: Set<LinkType>;
   onToggleLinkType: (lt: LinkType) => void;
-  onHighlightDevices: (devices: Set<string> | null) => void;
-  activeView: "devices" | "validation" | "educational";
-  onSetView: (view: "devices" | "validation" | "educational") => void;
   activeOverlays: Set<OverlayType>;
   onToggleOverlay: (o: OverlayType) => void;
 }
@@ -32,9 +29,6 @@ export default function Sidebar({
   onToggleRole,
   visibleLinkTypes,
   onToggleLinkType,
-  onHighlightDevices,
-  activeView,
-  onSetView,
   activeOverlays,
   onToggleOverlay,
 }: Props) {
@@ -69,23 +63,6 @@ export default function Sidebar({
     return getDeviceProtocols(cfg).includes(protocolFilter);
   };
 
-  // When protocol filter changes, highlight matching devices
-  const handleProtocolFilter = (proto: string | null) => {
-    setProtocolFilter(proto);
-    if (proto) {
-      const matching = new Set<string>();
-      for (const dev of topo.devices) {
-        const cfg = configs[toConfigKey(dev)];
-        if (cfg && getDeviceProtocols(cfg).includes(proto)) {
-          matching.add(dev);
-        }
-      }
-      onHighlightDevices(matching);
-    } else {
-      onHighlightDevices(null);
-    }
-  };
-
   return (
     <div className="h-full flex flex-col bg-gray-900 border-r border-gray-700">
       {/* Header */}
@@ -94,40 +71,6 @@ export default function Sidebar({
         <div className="text-xs text-gray-500 mt-0.5">
           {topo.devices.length} devices &middot; {topo.links.length} links &middot; AS{topo.sp_asn}
         </div>
-      </div>
-
-      {/* View toggle */}
-      <div className="flex border-b border-gray-700">
-        <button
-          className={`flex-1 py-2 text-xs font-medium transition-colors ${
-            activeView === "devices"
-              ? "text-white bg-gray-800 border-b-2 border-blue-500"
-              : "text-gray-400 hover:text-gray-200"
-          }`}
-          onClick={() => onSetView("devices")}
-        >
-          Devices
-        </button>
-        <button
-          className={`flex-1 py-2 text-xs font-medium transition-colors ${
-            activeView === "validation"
-              ? "text-white bg-gray-800 border-b-2 border-blue-500"
-              : "text-gray-400 hover:text-gray-200"
-          }`}
-          onClick={() => onSetView("validation")}
-        >
-          Validation
-        </button>
-        <button
-          className={`flex-1 py-2 text-xs font-medium transition-colors ${
-            activeView === "educational"
-              ? "text-white bg-gray-800 border-b-2 border-green-500"
-              : "text-gray-400 hover:text-gray-200"
-          }`}
-          onClick={() => onSetView("educational")}
-        >
-          Educational
-        </button>
       </div>
 
       {/* Search */}
@@ -237,7 +180,7 @@ export default function Sidebar({
           </div>
           <select
             value={protocolFilter || ""}
-            onChange={(e) => handleProtocolFilter(e.target.value || null)}
+            onChange={(e) => setProtocolFilter(e.target.value || null)}
             className="w-full px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none"
           >
             <option value="">All protocols</option>
