@@ -9,7 +9,6 @@ p2: device.#Device & {
 
 	interfaces: [
 		{name: "lo0", type: "loopback", ipv4: "10.0.0.4/32"},
-		{name: "eth1", type: "physical", ipv4: "10.1.0.3/31", description: "to-pe1"},
 		{name: "eth2", type: "physical", ipv4: "10.1.0.7/31", description: "to-pe2"},
 		{name: "eth3", type: "physical", ipv4: "10.1.0.9/31", description: "to-p1"},
 		{name: "eth4", type: "physical", ipv4: "10.1.0.12/31", description: "to-p4"},
@@ -21,7 +20,6 @@ p2: device.#Device & {
 		authentication: {type: "md5", key: "ISIS-KEY-1", key_id: 1}
 		interfaces: [
 			{name: "lo0", passive: true},
-			{name: "eth1", metric: 50},  // backup to pe1
 			{name: "eth2", metric: 50},  // backup to pe2
 			{name: "eth3", metric: 10},
 			{name: "eth4", metric: 15},
@@ -33,23 +31,20 @@ p2: device.#Device & {
 		srlb: {start: 15000, end: 15999}
 		node_sids: [{index: 4, prefix: "10.0.0.4/32"}]
 		adj_sids: [
-			{label: 15001, interface: "eth1", neighbor: "10.1.0.2"},
-			{label: 15002, interface: "eth2", neighbor: "10.1.0.6"},
-			{label: 15003, interface: "eth3", neighbor: "10.1.0.8"},
-			{label: 15004, interface: "eth4", neighbor: "10.1.0.13"},
+			{label: 15001, interface: "eth2", neighbor: "10.1.0.6"},
+			{label: 15002, interface: "eth3", neighbor: "10.1.0.8"},
+			{label: 15003, interface: "eth4", neighbor: "10.1.0.13"},
 		]
 	}
 
 	tilfa_config: {
 		default_protection: "node-link"
 		interfaces: [
-			{name: "eth1", protection: "node-link"},
 			{name: "eth2", protection: "node-link"},
 			{name: "eth3", protection: "node-link"},
 			{name: "eth4", protection: "node-link"},
 		]
 		srlgs: [
-			{id: 2, name: "fiber-bundle-west", interfaces: ["eth1"]},
 			{id: 3, name: "inter-core-lower", interfaces: ["eth3"]},
 			{id: 7, name: "inter-core-diagonal-west", interfaces: ["eth4"]},
 		]
@@ -59,7 +54,6 @@ p2: device.#Device & {
 	bfd_config: {
 		profiles: [{name: "isis-fast", min_tx: 100, min_rx: 100, detect_multiplier: 3}]
 		sessions: [
-			{interface: "eth1", profile: "isis-fast"},
 			{interface: "eth2", profile: "isis-fast"},
 			{interface: "eth3", profile: "isis-fast"},
 			{interface: "eth4", profile: "isis-fast"},

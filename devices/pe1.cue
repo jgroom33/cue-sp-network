@@ -11,7 +11,7 @@ pe1: device.#Device & {
 		{name: "lo0", type: "loopback", ipv4: "10.0.0.1/32"},
 		{name: "lo1", type: "loopback", ipv4: "10.0.1.1/32", description: "vtep-source"},
 		{name: "eth1", type: "physical", ipv4: "10.1.0.0/31", description: "to-p1"},
-		{name: "eth2", type: "physical", ipv4: "10.1.0.2/31", description: "to-p2"},
+		{name: "eth2", type: "physical", ipv4: "10.1.0.2/31", description: "to-p3"},
 		{name: "eth3", type: "physical", description: "customer-a-facing"},
 		{name: "eth3.100", type: "subinterface", description: "customer-a-l3vpn"},
 		{name: "eth4", type: "physical", description: "customer-a-l2vpn-pw"},
@@ -27,7 +27,7 @@ pe1: device.#Device & {
 		interfaces: [
 			{name: "lo0", passive: true},
 			{name: "eth1", metric: 10},
-			{name: "eth2", metric: 50},  // backup path to p2
+			{name: "eth2", metric: 50},  // backup path to p3
 			{name: "eth5", metric: 15},
 			{name: "eth6", metric: 15},
 		]
@@ -40,7 +40,7 @@ pe1: device.#Device & {
 		node_sids: [{index: 1, prefix: "10.0.0.1/32"}]
 		adj_sids: [
 			{label: 15001, interface: "eth1", neighbor: "10.1.0.1"},
-			{label: 15002, interface: "eth2", neighbor: "10.1.0.3"},
+			{label: 15002, interface: "eth2", neighbor: "10.1.0.3"},  // p3:eth5
 			{label: 15003, interface: "eth5", neighbor: "10.1.0.29"},
 			{label: 15004, interface: "eth6", neighbor: "10.1.0.21"},
 		]

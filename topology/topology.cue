@@ -38,7 +38,7 @@ links: [...#Link]
 links: [
 	// === PE <-> P core (diagonal attachment for 3-P-hop path) ===
 	{a_end: {device: "pe1", interface: "eth1"}, z_end: {device: "p1", interface: "eth1"}, type: "core"},
-	{a_end: {device: "pe1", interface: "eth2"}, z_end: {device: "p2", interface: "eth1"}, type: "core", metric: 50},
+	{a_end: {device: "pe1", interface: "eth2"}, z_end: {device: "p3", interface: "eth5"}, type: "core", metric: 50},
 	{a_end: {device: "pe2", interface: "eth1"}, z_end: {device: "p4", interface: "eth5"}, type: "core"},
 	{a_end: {device: "pe2", interface: "eth2"}, z_end: {device: "p2", interface: "eth2"}, type: "core", metric: 50},
 	// P1 <-> P2 inter-core

@@ -13,6 +13,7 @@ p3: device.#Device & {
 		{name: "eth2", type: "physical", ipv4: "10.1.0.14/31", description: "to-p4"},
 		{name: "eth3", type: "physical", ipv4: "10.1.0.16/31", description: "to-asbr1"},
 		{name: "eth4", type: "physical", ipv4: "10.1.0.24/31", description: "to-asbr2"},
+		{name: "eth5", type: "physical", ipv4: "10.1.0.3/31", description: "to-pe1"},
 	]
 
 	isis_config: {
@@ -25,6 +26,7 @@ p3: device.#Device & {
 			{name: "eth2", metric: 10},
 			{name: "eth3", metric: 20},
 			{name: "eth4", metric: 20},
+			{name: "eth5", metric: 50},  // backup to pe1
 		]
 	}
 
@@ -37,6 +39,7 @@ p3: device.#Device & {
 			{label: 15002, interface: "eth2", neighbor: "10.1.0.15"},
 			{label: 15003, interface: "eth3", neighbor: "10.1.0.17"},
 			{label: 15004, interface: "eth4", neighbor: "10.1.0.25"},
+			{label: 15005, interface: "eth5", neighbor: "10.1.0.2"},
 		]
 	}
 
@@ -47,6 +50,7 @@ p3: device.#Device & {
 			{name: "eth2", protection: "node-link"},
 			{name: "eth3", protection: "node-link"},
 			{name: "eth4", protection: "node-link"},
+			{name: "eth5", protection: "link"},
 		]
 		srlgs: [
 			{id: 4, name: "upper-tier-east", interfaces: ["eth1", "eth2"]},
@@ -61,6 +65,7 @@ p3: device.#Device & {
 			{interface: "eth2", profile: "isis-fast"},
 			{interface: "eth3", profile: "isis-fast"},
 			{interface: "eth4", profile: "isis-fast"},
+			{interface: "eth5", profile: "isis-fast"},
 		]
 		sbfd_reflector: {discriminator: 100007}
 	}
