@@ -20,6 +20,8 @@ _all_devices: {
 	asbr2:        devices.asbr2
 	agg1:         devices.agg1
 	agg2:         devices.agg2
+	agg3:         devices.agg3
+	agg4:         devices.agg4
 	pce1:         devices.pce1
 	isp_upstream: devices.isp_upstream
 	ce1:          devices.ce1
@@ -41,6 +43,8 @@ _provider_devices: {
 	asbr2: devices.asbr2
 	agg1:  devices.agg1
 	agg2:  devices.agg2
+	agg3:  devices.agg3
+	agg4:  devices.agg4
 	pce1:  devices.pce1
 }
 
@@ -54,7 +58,6 @@ _bgp_devices: {
 	asbr2:        devices.asbr2
 	pce1:         devices.pce1
 	isp_upstream: devices.isp_upstream
-	ce1:          devices.ce1
 }
 
 // 1. SRGB must be identical across the SR domain
@@ -112,26 +115,11 @@ _sbfd_uniqueness: {
 	}
 }
 
-// 8. VRRP: PE1 and PE2 share VRID 1 on eth5 — PE1 must have higher priority
-_vrrp_priority_check: {
-	_pe1_pri: devices.pe1.vrrp_config.groups[0].priority
-	_pe2_pri: devices.pe2.vrrp_config.groups[0].priority
-	_valid: true & (_pe1_pri > _pe2_pri)
-}
-
-// 9. EVPN ESI consistency: PE1 and PE2 must share the same ESI for CE1 dual-homing
-_esi_consistency: {
-	_pe1_esi: devices.pe1.vxlan_config.ethernet_segments[0].esi
-	_pe2_esi: devices.pe2.vxlan_config.ethernet_segments[0].esi
-	_match: _pe1_esi & _pe2_esi
-}
-
-// 10. CE1 dual-home handoff consistency: PE1 and PE2 handoffs to CE1 must agree
+// 8. CE1 dual-home handoff consistency: PE1 and PE2 handoffs to CE1 (via AGGs) must agree
 _ce1_handoff_consistency: {
 	_pe1_h: devices.pe1.handoff_config.handoffs[0]
 	_pe2_h: devices.pe2.handoff_config.handoffs[0]
-	// Routing protocol, service type, and encapsulation must match
-	_proto_match: _pe1_h.routing_protocol & _pe2_h.routing_protocol
+	// Service type, encapsulation, and VRF must match
 	_svc_match:   _pe1_h.service_type & _pe2_h.service_type
 	_encap_match: _pe1_h.encapsulation & _pe2_h.encapsulation
 	_vrf_match:   _pe1_h.vrf & _pe2_h.vrf

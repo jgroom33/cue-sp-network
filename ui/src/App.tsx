@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useReducer } from "react";
 import { useNetworkData } from "./hooks/useNetworkData";
 import type { DeviceRole, LinkType, OverlayType } from "./types";
 import { toConfigKey } from "./utils/graph";
@@ -7,6 +7,14 @@ import TopologyGraph from "./components/TopologyGraph";
 import DevicePanel from "./components/DevicePanel";
 import Sidebar from "./components/Sidebar";
 import ValidationDashboard from "./components/ValidationDashboard";
+import {
+  EducationalPanel,
+  PacketAnimationLayer,
+  ServiceOverlay,
+  DisabledLinkOverlay,
+  educationalReducer,
+  initialEducationalState,
+} from "./educational";
 
 const ALL_ROLES = new Set<DeviceRole>(["PE", "P", "RR", "ASBR", "AGG", "CE", "PCE", "EXTERNAL"]);
 const ALL_LINK_TYPES = new Set<LinkType>(["core", "edge", "customer", "peering"]);
@@ -17,8 +25,10 @@ export default function App() {
   const [visibleRoles, setVisibleRoles] = useState<Set<DeviceRole>>(new Set(ALL_ROLES));
   const [visibleLinkTypes, setVisibleLinkTypes] = useState<Set<LinkType>>(new Set(ALL_LINK_TYPES));
   const [highlightedDevices, setHighlightedDevices] = useState<Set<string> | null>(null);
-  const [activeView, setActiveView] = useState<"devices" | "validation">("devices");
+  const [activeView, setActiveView] = useState<"devices" | "validation" | "educational">("devices");
   const [activeOverlays, setActiveOverlays] = useState<Set<OverlayType>>(new Set());
+  const [eduState, eduDispatch] = useReducer(educationalReducer, initialEducationalState);
+  const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map());
 
   const toggleRole = useCallback((role: DeviceRole) => {
     setVisibleRoles((prev) => {
@@ -126,18 +136,49 @@ export default function App() {
           highlightedDevices={highlightedDevices}
           overlayData={overlayData!}
           activeOverlays={activeOverlays}
+          onNodePositionsUpdate={setNodePositions}
+          educationalOverlay={
+            activeView === "educational" && eduState.activeScenario ? (
+              <>
+                <ServiceOverlay
+                  scenario={eduState.activeScenario}
+                  nodePositions={nodePositions}
+                  visible={eduState.showOverlay}
+                />
+                <DisabledLinkOverlay
+                  disabledLinks={eduState.whatIf.disabledLinks}
+                  nodePositions={nodePositions}
+                />
+                <PacketAnimationLayer
+                  scenario={eduState.activeScenario}
+                  animation={eduState.animation}
+                  nodePositions={nodePositions}
+                  dispatch={eduDispatch}
+                />
+              </>
+            ) : undefined
+          }
         />
       </div>
 
-      {/* Device detail panel */}
-      {selectedConfig && (
+      {/* Right panel: device detail or educational */}
+      {activeView === "educational" ? (
+        <div className="flex-shrink-0">
+          <EducationalPanel
+            topo={topo}
+            configs={device_configs}
+            state={eduState}
+            dispatch={eduDispatch}
+          />
+        </div>
+      ) : selectedConfig ? (
         <div className="w-96 flex-shrink-0">
           <DevicePanel
             device={selectedConfig}
             onClose={() => setSelectedDevice(null)}
           />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

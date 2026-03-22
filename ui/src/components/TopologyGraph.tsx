@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import type {
   Topology,
@@ -24,6 +24,8 @@ interface Props {
   highlightedDevices: Set<string> | null;
   overlayData: OverlayData;
   activeOverlays: Set<OverlayType>;
+  onNodePositionsUpdate?: (positions: Map<string, { x: number; y: number }>) => void;
+  educationalOverlay?: React.ReactNode;
 }
 
 export default function TopologyGraph({
@@ -36,6 +38,8 @@ export default function TopologyGraph({
   highlightedDevices,
   overlayData,
   activeOverlays,
+  onNodePositionsUpdate,
+  educationalOverlay,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,6 +48,10 @@ export default function TopologyGraph({
   onSelectRef.current = onSelectDevice;
   const selectedRef = useRef(selectedDevice);
   selectedRef.current = selectedDevice;
+  const onNodePosRef = useRef(onNodePositionsUpdate);
+  onNodePosRef.current = onNodePositionsUpdate;
+  const [zoomTransform, setZoomTransform] = useState("translate(0,0) scale(1)");
+  const zoomTransformRef = useRef("translate(0,0) scale(1)");
 
   // Build graph once when topo/configs/overlayData change
   useEffect(() => {
@@ -64,7 +72,13 @@ export default function TopologyGraph({
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.3, 4])
-      .on("zoom", (event) => g.attr("transform", event.transform));
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+        const t = event.transform;
+        const str = `translate(${t.x},${t.y}) scale(${t.k})`;
+        zoomTransformRef.current = str;
+        setZoomTransform(str);
+      });
     svg.call(zoom);
 
     // Arrow markers
@@ -318,8 +332,9 @@ export default function TopologyGraph({
           })
           .on("end", (event, d) => {
             if (!event.active) simulationRef.current?.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
+            // Keep nodes pinned at their dragged position
+            d.fx = d.x;
+            d.fy = d.y;
           })
       );
 
@@ -374,6 +389,8 @@ export default function TopologyGraph({
       target: l.target,
     }));
 
+    // Static layout: all nodes pinned via fx/fy. Simulation runs
+    // only to resolve link source/target references and fire a tick.
     const simulation = d3
       .forceSimulation<GraphNode>(nodes)
       .force(
@@ -382,6 +399,7 @@ export default function TopologyGraph({
           .forceLink<GraphNode, GraphLink>(links)
           .id((d) => d.id)
           .distance(120)
+          .strength(0)
       )
       .force(
         "bgp-links",
@@ -389,38 +407,10 @@ export default function TopologyGraph({
           .forceLink<GraphNode, BgpSimLink>(bgpSimLinks)
           .id((d: { id?: string }) => d.id || "")
           .distance(200)
-          .strength(0.15)
+          .strength(0)
       )
-      .force("charge", d3.forceManyBody().strength(-400))
-      .force(
-        "center",
-        d3.forceCenter(width / 2, height / 2).strength(0.05)
-      )
-      .force(
-        "collision",
-        d3.forceCollide<GraphNode>().radius((d) => d.radius + 15)
-      )
-      .force(
-        "y",
-        d3
-          .forceY<GraphNode>()
-          .y((d) => {
-            const positions: Record<DeviceRole, number> = {
-              EXTERNAL: height * 0.05,
-              ASBR: height * 0.18,
-              RR: height * 0.32,
-              PCE: height * 0.32,
-              P: height * 0.48,
-              PE: height * 0.68,
-              AGG: height * 0.8,
-              CE: height * 0.92,
-            };
-            return positions[d.role] || height / 2;
-          })
-          .strength(0.15)
-      )
-      .alphaDecay(0.05)
-      .velocityDecay(0.4)
+      .alphaDecay(0.3)
+      .velocityDecay(0.8)
       .on("tick", () => {
         // Physical links
         linkGroup
@@ -501,6 +491,15 @@ export default function TopologyGraph({
           zText
             .attr("x", sx + dx * 0.7 + nx * off)
             .attr("y", sy + dy * 0.7 + ny * off);
+        }
+
+        // Report node positions for educational overlay
+        if (onNodePosRef.current) {
+          const positions = new Map<string, { x: number; y: number }>();
+          for (const n of nodes) {
+            positions.set(n.id, { x: n.x || 0, y: n.y || 0 });
+          }
+          onNodePosRef.current(positions);
         }
       });
 
@@ -585,6 +584,17 @@ export default function TopologyGraph({
         className="w-full h-full"
         style={{ minHeight: "600px" }}
       />
+      {/* Educational animation overlay — same coordinate space as D3 graph */}
+      {educationalOverlay && (
+        <svg
+          className="w-full h-full absolute inset-0 pointer-events-none"
+          style={{ minHeight: "600px" }}
+        >
+          <g transform={zoomTransform}>
+            {educationalOverlay}
+          </g>
+        </svg>
+      )}
       {/* Legend */}
       <div className="absolute bottom-3 left-3 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-lg p-3 text-xs">
         <div className="font-semibold mb-2 text-gray-300">Roles</div>

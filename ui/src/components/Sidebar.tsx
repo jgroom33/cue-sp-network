@@ -13,8 +13,8 @@ interface Props {
   visibleLinkTypes: Set<LinkType>;
   onToggleLinkType: (lt: LinkType) => void;
   onHighlightDevices: (devices: Set<string> | null) => void;
-  activeView: "devices" | "validation";
-  onSetView: (view: "devices" | "validation") => void;
+  activeView: "devices" | "validation" | "educational";
+  onSetView: (view: "devices" | "validation" | "educational") => void;
   activeOverlays: Set<OverlayType>;
   onToggleOverlay: (o: OverlayType) => void;
 }
@@ -117,6 +117,16 @@ export default function Sidebar({
           onClick={() => onSetView("validation")}
         >
           Validation
+        </button>
+        <button
+          className={`flex-1 py-2 text-xs font-medium transition-colors ${
+            activeView === "educational"
+              ? "text-white bg-gray-800 border-b-2 border-green-500"
+              : "text-gray-400 hover:text-gray-200"
+          }`}
+          onClick={() => onSetView("educational")}
+        >
+          Educational
         </button>
       </div>
 

@@ -1,6 +1,6 @@
 package network
 
-// Top-level network model — 17 devices, 12+ protocol schemas
+// Top-level network model — 19 devices, 12+ protocol schemas
 
 import (
 	"github.com/jgroom/sp-network-model/topology"
@@ -32,6 +32,8 @@ network: {
 		// Aggregation
 		agg1: devices.agg1
 		agg2: devices.agg2
+		agg3: devices.agg3
+		agg4: devices.agg4
 		// Path Computation Element
 		pce1: devices.pce1
 		// External

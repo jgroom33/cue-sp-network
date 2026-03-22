@@ -29,7 +29,40 @@ export interface GraphLink {
   metric?: number;
 }
 
-// Initial Y positions by role to seed the layout
+// Fixed positions for deterministic layout (fraction of width/height).
+// Designed so P routers form a square in the center, with clear
+// vertical tiers: EXTERNAL → ASBR → RR/PCE → P → PE → AGG → CE.
+const fixedPositions: Record<string, { x: number; y: number }> = {
+  // External / ISP — top center
+  "isp-upstream": { x: 0.50, y: 0.04 },
+  // ASBRs — below external, spread horizontally
+  asbr1:          { x: 0.38, y: 0.15 },
+  asbr2:          { x: 0.62, y: 0.15 },
+  // Route Reflectors — flanking the core
+  rr1:            { x: 0.18, y: 0.32 },
+  rr2:            { x: 0.82, y: 0.32 },
+  // PCE — near RRs
+  pce1:           { x: 0.18, y: 0.22 },
+  // P routers — square in center
+  p3:             { x: 0.38, y: 0.30 },
+  p4:             { x: 0.62, y: 0.30 },
+  p1:             { x: 0.38, y: 0.48 },
+  p2:             { x: 0.62, y: 0.48 },
+  // PEs — below P core
+  pe1:            { x: 0.32, y: 0.64 },
+  pe2:            { x: 0.68, y: 0.64 },
+  // AGGs — below PEs, fanned out
+  agg1:           { x: 0.18, y: 0.77 },
+  agg3:           { x: 0.38, y: 0.77 },
+  agg4:           { x: 0.62, y: 0.77 },
+  agg2:           { x: 0.82, y: 0.77 },
+  // CEs — bottom tier
+  ce2:            { x: 0.18, y: 0.92 },
+  ce1:            { x: 0.50, y: 0.92 },
+  ce3:            { x: 0.82, y: 0.92 },
+};
+
+// Fallback positions by role (for any device not in the map above)
 const roleYPositions: Record<DeviceRole, number> = {
   EXTERNAL: 0.05,
   ASBR: 0.15,
@@ -39,18 +72,6 @@ const roleYPositions: Record<DeviceRole, number> = {
   PE: 0.7,
   AGG: 0.8,
   CE: 0.92,
-};
-
-// X spread per role
-const roleXOffsets: Record<DeviceRole, number> = {
-  EXTERNAL: 0.5,
-  ASBR: 0.35,
-  RR: 0.65,
-  PCE: 0.35,
-  P: 0.5,
-  PE: 0.5,
-  AGG: 0.5,
-  CE: 0.5,
 };
 
 // Normalize device name from topo (isp-upstream) to config key (isp_upstream)
@@ -76,14 +97,21 @@ export function buildGraph(
     const role = (topo.device_roles[dev] || "EXTERNAL") as DeviceRole;
     const configKey = toConfigKey(dev);
     const config = configs[configKey];
-    const siblings = byRole[role] || [dev];
-    const idx = siblings.indexOf(dev);
-    const count = siblings.length;
 
-    // Spread siblings across X around the role's center offset
-    const centerX = roleXOffsets[role] * width;
-    const spread = Math.min(width * 0.6, count * 120);
-    const x = centerX + (idx - (count - 1) / 2) * (spread / Math.max(count - 1, 1));
+    // Use fixed position if available, otherwise fall back to role-based placement
+    const fixed = fixedPositions[dev];
+    let x: number;
+    let y: number;
+    if (fixed) {
+      x = fixed.x * width;
+      y = fixed.y * height;
+    } else {
+      const siblings = byRole[role] || [dev];
+      const idx = siblings.indexOf(dev);
+      const count = siblings.length;
+      x = 0.5 * width + (idx - (count - 1) / 2) * 120;
+      y = roleYPositions[role] * height;
+    }
 
     return {
       id: dev,
@@ -92,8 +120,10 @@ export function buildGraph(
       routerId: config?.router_id || "",
       loopback: topo.loopbacks[dev] || "",
       radius: nodeRadius[role],
-      x: Math.max(40, Math.min(width - 40, x)),
-      y: roleYPositions[role] * height + (Math.random() - 0.5) * 30,
+      x,
+      y,
+      fx: x,
+      fy: y,
     };
   });
 

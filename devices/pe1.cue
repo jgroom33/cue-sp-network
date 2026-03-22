@@ -15,7 +15,7 @@ pe1: device.#Device & {
 		{name: "eth3", type: "physical", description: "customer-a-facing"},
 		{name: "eth3.100", type: "subinterface", description: "customer-a-l3vpn"},
 		{name: "eth4", type: "physical", description: "customer-a-l2vpn-pw"},
-		{name: "eth5", type: "physical", ipv4: "10.2.0.1/24", description: "ce1-dual-home-shared-lan"},
+		{name: "eth5", type: "physical", ipv4: "10.1.0.28/31", description: "to-agg3"},
 		{name: "eth6", type: "physical", ipv4: "10.1.0.20/31", description: "to-agg1"},
 	]
 
@@ -28,6 +28,7 @@ pe1: device.#Device & {
 			{name: "lo0", passive: true},
 			{name: "eth1", metric: 10},
 			{name: "eth2", metric: 10},
+			{name: "eth5", metric: 15},
 			{name: "eth6", metric: 15},
 		]
 	}
@@ -40,7 +41,8 @@ pe1: device.#Device & {
 		adj_sids: [
 			{label: 15001, interface: "eth1", neighbor: "10.1.0.1"},
 			{label: 15002, interface: "eth2", neighbor: "10.1.0.3"},
-			{label: 15003, interface: "eth6", neighbor: "10.1.0.21"},
+			{label: 15003, interface: "eth5", neighbor: "10.1.0.29"},
+			{label: 15004, interface: "eth6", neighbor: "10.1.0.21"},
 		]
 	}
 
@@ -50,6 +52,7 @@ pe1: device.#Device & {
 		interfaces: [
 			{name: "eth1", protection: "node-link"},
 			{name: "eth2", protection: "node-link"},
+			{name: "eth5", protection: "link"},
 			{name: "eth6", protection: "link"},
 		]
 		srlgs: [
@@ -68,10 +71,10 @@ pe1: device.#Device & {
 		sessions: [
 			{interface: "eth1", profile: "isis-fast"},
 			{interface: "eth2", profile: "isis-fast"},
+			{interface: "eth5", profile: "isis-fast"},
 			{interface: "eth6", profile: "isis-fast"},
 			{remote: "10.0.0.5", multihop: true, profile: "bgp-multihop"},
 			{remote: "10.0.0.6", multihop: true, profile: "bgp-multihop"},
-			{interface: "eth5", profile: "ebgp-direct"},
 		]
 		sbfd_reflector: {discriminator: 100001}
 	}
@@ -191,21 +194,15 @@ pe1: device.#Device & {
 				update_source: "lo0"
 				address_families: ["ipv4-unicast", "ipv6-unicast", "l3vpn-ipv4", "evpn"]
 			},
-			{
-				name: "EBGP-CE", remote_as: 65001, peer_type: "external"
-				update_source: "eth5"
-				address_families: ["ipv4-unicast"]
-			},
 		]
 		neighbors: [
 			{address: "10.0.0.5", remote_as: 65000, peer_type: "internal", peer_group: "IBGP-RR", update_source: "lo0", address_families: ["ipv4-unicast", "l3vpn-ipv4", "evpn"], description: "to-rr1"},
 			{address: "10.0.0.6", remote_as: 65000, peer_type: "internal", peer_group: "IBGP-RR", update_source: "lo0", address_families: ["ipv4-unicast", "l3vpn-ipv4", "evpn"], description: "to-rr2"},
-			{address: "10.2.0.10", remote_as: 65001, peer_type: "external", peer_group: "EBGP-CE", address_families: ["ipv4-unicast"], description: "to-ce1", vrf: "CUSTOMER-A", bfd: true, maximum_prefix: 1000},
 		]
 		l3vpns: [{
 			name: "CUSTOMER-A", rd: "65000:100"
 			rt_import: ["65000:100"], rt_export: ["65000:100"]
-			interfaces: ["eth3.100", "eth5"]
+			interfaces: ["eth3.100"]
 		}]
 		evpn_instances: [{
 			name: "ELAN-A", evi: 100, rd: "65000:10100"
@@ -251,25 +248,6 @@ pe1: device.#Device & {
 			virtual_mac: "00:00:5e:00:01:01"
 			interfaces: [{vlan_id: 100, ipv4: "10.2.0.1/24"}]
 		}
-		// ESI multihoming for CE1 dual-homed shared LAN
-		ethernet_segments: [{
-			esi: "00:01:01:01:01:01:01:01:01:01"
-			interface: "eth5"
-			redundancy_mode: "all-active"
-			df_election: "preference"
-			df_preference: 200
-		}]
-	}
-
-	// --- VRRP --- (shared LAN with PE2 + CE1)
-	vrrp_config: {
-		groups: [{
-			vrid: 1, interface: "eth5", version: 3
-			virtual_addresses: ["10.2.0.254"]
-			priority: 150, preempt: true, advert_interval: 1
-			track_interfaces: [{interface: "eth1", priority_decrement: 60}]
-			bfd_peer: "10.2.0.2"
-		}]
 	}
 
 	// --- ACL ---
@@ -344,19 +322,14 @@ pe1: device.#Device & {
 		source_interface: "lo0"
 	}
 
-	// --- CE Handoff --- (PE side)
+	// --- CE Handoff --- (PE side, via aggregation layer)
 	handoff_config: {
 		handoffs: [
 			{
-				name: "pe1-to-ce1", side: "pe", interface: "eth5"
-				service_type: "l3vpn", routing_protocol: "bgp", encapsulation: "untagged"
-				bgp_routing: {
-					asn: 65000
-					neighbors: [{
-						address: "10.2.0.10", remote_as: 65001, peer_type: "external"
-						address_families: ["ipv4-unicast"], description: "to-ce1"
-						bfd: true, vrf: "CUSTOMER-A"
-					}]
+				name: "pe1-to-ce1-via-agg3", side: "pe", interface: "eth5"
+				service_type: "l3vpn", routing_protocol: "static", encapsulation: "untagged"
+				static_routing: {
+					routes: [{prefix: "10.2.3.0/31", next_hop: "10.1.0.29", description: "ce1-via-agg3"}]
 				}
 				untagged_encap: {}
 				qos: {

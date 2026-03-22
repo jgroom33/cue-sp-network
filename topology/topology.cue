@@ -1,7 +1,7 @@
 package topology
 
 // Service provider backbone topology — expanded
-// 2x PE, 4x P, 2x RR, 2x ASBR, 2x AGG, 3x CE, 1x PCE, 1x EXTERNAL = 17 devices
+// 2x PE, 4x P, 2x RR, 2x ASBR, 4x AGG, 3x CE, 1x PCE, 1x EXTERNAL = 19 devices
 
 #Link: {
 	a_end: {device: string, interface: string}
@@ -10,7 +10,7 @@ package topology
 	metric?: int
 }
 
-devices: ["pe1", "pe2", "p1", "p2", "p3", "p4", "rr1", "rr2", "asbr1", "asbr2", "agg1", "agg2", "ce1", "ce2", "ce3", "pce1", "isp-upstream"]
+devices: ["pe1", "pe2", "p1", "p2", "p3", "p4", "rr1", "rr2", "asbr1", "asbr2", "agg1", "agg2", "agg3", "agg4", "ce1", "ce2", "ce3", "pce1", "isp-upstream"]
 
 device_roles: {
 	pe1:            "PE"
@@ -25,6 +25,8 @@ device_roles: {
 	asbr2:          "ASBR"
 	agg1:           "AGG"
 	agg2:           "AGG"
+	agg3:           "AGG"
+	agg4:           "AGG"
 	ce1:            "CE"
 	ce2:            "CE"
 	ce3:            "CE"
@@ -63,10 +65,12 @@ links: [
 	// === PE to AGG (aggregation layer) ===
 	{a_end: {device: "pe1", interface: "eth6"}, z_end: {device: "agg1", interface: "eth1"}, type: "edge"},
 	{a_end: {device: "pe2", interface: "eth6"}, z_end: {device: "agg2", interface: "eth1"}, type: "edge"},
+	{a_end: {device: "pe1", interface: "eth5"}, z_end: {device: "agg3", interface: "eth1"}, type: "edge"},
+	{a_end: {device: "pe2", interface: "eth5"}, z_end: {device: "agg4", interface: "eth1"}, type: "edge"},
 
-	// === Customer-facing: dual-homed CE1 shared LAN ===
-	{a_end: {device: "pe1", interface: "eth5"}, z_end: {device: "ce1", interface: "eth1"}, type: "customer"},
-	{a_end: {device: "pe2", interface: "eth5"}, z_end: {device: "ce1", interface: "eth1"}, type: "customer"},
+	// === Customer-facing: CE1 dual-homed via AGG3/AGG4 ===
+	{a_end: {device: "agg3", interface: "eth2"}, z_end: {device: "ce1", interface: "eth1"}, type: "customer"},
+	{a_end: {device: "agg4", interface: "eth2"}, z_end: {device: "ce1", interface: "eth2"}, type: "customer"},
 
 	// === Customer-facing: single-homed via AGG ===
 	{a_end: {device: "agg1", interface: "eth2"}, z_end: {device: "ce2", interface: "eth1"}, type: "customer"},

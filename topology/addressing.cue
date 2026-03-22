@@ -17,6 +17,8 @@ loopbacks: {
 	agg2:  "10.0.0.11"
 	asbr2: "10.0.0.12"
 	pce1:  "10.0.0.13"
+	agg3:  "10.0.0.14"
+	agg4:  "10.0.0.15"
 	ce1:   "192.168.1.1"
 	ce2:   "192.168.2.1"
 	ce3:   "192.168.3.1"
@@ -48,6 +50,8 @@ p2p_subnets: {
 	// Aggregation
 	"pe1-agg1":  "10.1.0.20/31"
 	"pe2-agg2":  "10.1.0.22/31"
+	"pe1-agg3":  "10.1.0.28/31"
+	"pe2-agg4":  "10.1.0.30/31"
 	// ASBR2
 	"p3-asbr2":  "10.1.0.24/31"
 	"p4-asbr2":  "10.1.0.26/31"
@@ -58,9 +62,10 @@ p2p_subnets: {
 
 // Customer/access subnets
 customer_subnets: {
-	"ce1-shared-lan": "10.2.0.0/24"   // PE1(.1) + PE2(.2) + CE1(.10), VIP .254
 	"agg1-ce2":       "10.2.1.0/31"
 	"agg2-ce3":       "10.2.2.0/31"
+	"agg3-ce1":       "10.2.3.0/31"
+	"agg4-ce1":       "10.2.4.0/31"
 }
 
 // Management subnet

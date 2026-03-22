@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.4.0] - 2026-03-21
+
+### Educational Network Visualization
+
+- **Educational mode** — third view alongside Devices/Validation, accessible from the sidebar tab
+  - 6 pre-built scenarios: L3VPN CE-to-CE, VXLAN Ingress Replication, SR-TE Low-Latency, BGP Route Reflection, TI-LFA Failover, Internet Transit
+  - Packet engine pre-computes full header state at every hop (MPLS push/swap/pop, VXLAN encap/decap, TTL decrement, QoS classification)
+  - Animated packet dot with glow trail travels the topology graph along the computed path
+  - Header stack "layer cake" diagram (Ethernet/MPLS/IP/VXLAN/Payload) with yellow flash on changed fields per hop
+  - QoS pipeline visualization: Classification → Policing → Queuing → WRED (togglable)
+  - What-If mode: disable links to simulate failures and see TI-LFA reconvergence
+  - Hop timeline with clickable nodes, play/pause/step/speed controls, keyboard shortcuts (Space, arrows, +/-)
+  - Service overlay highlighting (L3VPN, VXLAN, L2VPN, Internet paths) on the topology
+
+### Topology changes (17 → 19 devices)
+
+- **Added AGG3 and AGG4** aggregation switches between PEs and CE1
+  - CE1 now routes through AGG layer instead of direct PE attachment
+  - Full L3VPN path: CE3 → AGG2 → PE2 → P1 → PE1 → AGG1 → CE2 (traverses P core)
+- Removed direct PE1↔CE1 and PE2↔CE1 customer links; replaced with PE↔AGG edge links + AGG↔CE customer links
+- Removed VRRP and EVPN ESI multihoming config from PE1/PE2 (no longer shared LAN)
+- CE1 changed from eBGP dual-homed to static routing via AGG3/AGG4
+- Updated validation constraints: removed VRRP/ESI checks, added AGG3/AGG4 to provider device set
+
+### Static graph layout
+
+- Replaced force-directed layout with deterministic fixed positions for all 19 devices
+  - P routers arranged in a square (p1/p2 lower, p3/p4 upper)
+  - ASBRs above, PEs below, AGGs fanned out beneath PEs, CEs at bottom
+  - Nodes stay pinned; drag to reposition persists
+- Educational overlay SVG tracks zoom/pan transform for correct alignment
+
+### New files (15 files, ~1,500 lines)
+
+- `ui/src/educational/` — types, scenarios, pathfinding (Dijkstra + SR-TE), packet engine, 10 React components
+- `devices/agg3.cue`, `devices/agg4.cue` — full AGG device configs (IS-IS, SR, QoS, BFD, ACL, CoPP, NTP)
+
 ## [0.3.0] - 2026-03-21
 
 ### Schema enhancements (Phase 1)
