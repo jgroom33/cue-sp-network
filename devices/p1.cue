@@ -10,7 +10,6 @@ p1: device.#Device & {
 	interfaces: [
 		{name: "lo0", type: "loopback", ipv4: "10.0.0.3/32"},
 		{name: "eth1", type: "physical", ipv4: "10.1.0.1/31", description: "to-pe1"},
-		{name: "eth2", type: "physical", ipv4: "10.1.0.5/31", description: "to-pe2"},
 		{name: "eth3", type: "physical", ipv4: "10.1.0.8/31", description: "to-p2"},
 		{name: "eth4", type: "physical", ipv4: "10.1.0.10/31", description: "to-p3"},
 	]
@@ -22,7 +21,6 @@ p1: device.#Device & {
 		interfaces: [
 			{name: "lo0", passive: true},
 			{name: "eth1", metric: 10},
-			{name: "eth2", metric: 10},
 			{name: "eth3", metric: 10},
 			{name: "eth4", metric: 15},
 		]
@@ -34,9 +32,8 @@ p1: device.#Device & {
 		node_sids: [{index: 3, prefix: "10.0.0.3/32"}]
 		adj_sids: [
 			{label: 15001, interface: "eth1", neighbor: "10.1.0.0"},
-			{label: 15002, interface: "eth2", neighbor: "10.1.0.4"},
-			{label: 15003, interface: "eth3", neighbor: "10.1.0.9"},
-			{label: 15004, interface: "eth4", neighbor: "10.1.0.11"},
+			{label: 15002, interface: "eth3", neighbor: "10.1.0.9"},
+			{label: 15003, interface: "eth4", neighbor: "10.1.0.11"},
 		]
 	}
 
@@ -44,7 +41,6 @@ p1: device.#Device & {
 		default_protection: "node-link"
 		interfaces: [
 			{name: "eth1", protection: "node-link"},
-			{name: "eth2", protection: "node-link"},
 			{name: "eth3", protection: "node-link"},
 			{name: "eth4", protection: "node-link"},
 		]
@@ -60,7 +56,6 @@ p1: device.#Device & {
 		profiles: [{name: "isis-fast", min_tx: 100, min_rx: 100, detect_multiplier: 3}]
 		sessions: [
 			{interface: "eth1", profile: "isis-fast"},
-			{interface: "eth2", profile: "isis-fast"},
 			{interface: "eth3", profile: "isis-fast"},
 			{interface: "eth4", profile: "isis-fast"},
 		]

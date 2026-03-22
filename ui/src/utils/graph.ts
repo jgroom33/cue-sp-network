@@ -43,19 +43,19 @@ const fixedPositions: Record<string, { x: number; y: number }> = {
   rr2:            { x: 0.82, y: 0.32 },
   // PCE — near RRs
   pce1:           { x: 0.18, y: 0.22 },
-  // P routers — square in center
-  p3:             { x: 0.38, y: 0.30 },
-  p4:             { x: 0.62, y: 0.30 },
-  p1:             { x: 0.38, y: 0.48 },
-  p2:             { x: 0.62, y: 0.48 },
-  // PEs — below P core
-  pe1:            { x: 0.32, y: 0.64 },
-  pe2:            { x: 0.68, y: 0.64 },
+  // P routers — square in center (pe1→p1 left, pe2→p4 right-diagonal)
+  p3:             { x: 0.35, y: 0.28 },
+  p4:             { x: 0.65, y: 0.28 },
+  p1:             { x: 0.35, y: 0.48 },
+  p2:             { x: 0.65, y: 0.48 },
+  // PEs — below P core, left/right aligned
+  pe1:            { x: 0.25, y: 0.64 },
+  pe2:            { x: 0.75, y: 0.64 },
   // AGGs — below PEs, fanned out
-  agg1:           { x: 0.18, y: 0.77 },
-  agg3:           { x: 0.38, y: 0.77 },
-  agg4:           { x: 0.62, y: 0.77 },
-  agg2:           { x: 0.82, y: 0.77 },
+  agg1:           { x: 0.12, y: 0.78 },
+  agg3:           { x: 0.32, y: 0.78 },
+  agg4:           { x: 0.68, y: 0.78 },
+  agg2:           { x: 0.88, y: 0.78 },
   // CEs — bottom tier
   ce2:            { x: 0.18, y: 0.92 },
   ce1:            { x: 0.50, y: 0.92 },

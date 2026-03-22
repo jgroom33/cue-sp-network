@@ -21,8 +21,8 @@ p2: device.#Device & {
 		authentication: {type: "md5", key: "ISIS-KEY-1", key_id: 1}
 		interfaces: [
 			{name: "lo0", passive: true},
-			{name: "eth1", metric: 10},
-			{name: "eth2", metric: 10},
+			{name: "eth1", metric: 50},  // backup to pe1
+			{name: "eth2", metric: 50},  // backup to pe2
 			{name: "eth3", metric: 10},
 			{name: "eth4", metric: 15},
 		]

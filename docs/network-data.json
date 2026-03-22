@@ -64,7 +64,8 @@
                         "device": "p2",
                         "interface": "eth1"
                     },
-                    "type": "core"
+                    "type": "core",
+                    "metric": 50
                 },
                 {
                     "a_end": {
@@ -72,8 +73,8 @@
                         "interface": "eth1"
                     },
                     "z_end": {
-                        "device": "p1",
-                        "interface": "eth2"
+                        "device": "p4",
+                        "interface": "eth5"
                     },
                     "type": "core"
                 },
@@ -86,7 +87,8 @@
                         "device": "p2",
                         "interface": "eth2"
                     },
-                    "type": "core"
+                    "type": "core",
+                    "metric": 50
                 },
                 {
                     "a_end": {
@@ -337,7 +339,7 @@
             "p2p_subnets": {
                 "pe1-p1": "10.1.0.0/31",
                 "pe1-p2": "10.1.0.2/31",
-                "pe2-p1": "10.1.0.4/31",
+                "pe2-p4": "10.1.0.4/31",
                 "pe2-p2": "10.1.0.6/31",
                 "p1-p2": "10.1.0.8/31",
                 "p1-p3": "10.1.0.10/31",
@@ -463,7 +465,7 @@
                         {
                             "name": "eth2",
                             "level": "L2",
-                            "metric": 10,
+                            "metric": 50,
                             "passive": false,
                             "network_type": "point-to-point"
                         },
@@ -1710,7 +1712,7 @@
                     },
                     {
                         "name": "eth1",
-                        "description": "to-p1",
+                        "description": "to-p4",
                         "enabled": true,
                         "mtu": 9000,
                         "ipv4": "10.1.0.4/31",
@@ -1784,7 +1786,7 @@
                         {
                             "name": "eth2",
                             "level": "L2",
-                            "metric": 10,
+                            "metric": 50,
                             "passive": false,
                             "network_type": "point-to-point"
                         },
@@ -3074,14 +3076,6 @@
                         "type": "physical"
                     },
                     {
-                        "name": "eth2",
-                        "description": "to-pe2",
-                        "enabled": true,
-                        "mtu": 9000,
-                        "ipv4": "10.1.0.5/31",
-                        "type": "physical"
-                    },
-                    {
                         "name": "eth3",
                         "description": "to-p2",
                         "enabled": true,
@@ -3112,13 +3106,6 @@
                         },
                         {
                             "name": "eth1",
-                            "level": "L2",
-                            "metric": 10,
-                            "passive": false,
-                            "network_type": "point-to-point"
-                        },
-                        {
-                            "name": "eth2",
                             "level": "L2",
                             "metric": 10,
                             "passive": false,
@@ -3173,18 +3160,12 @@
                         },
                         {
                             "label": 15002,
-                            "interface": "eth2",
-                            "neighbor": "10.1.0.4",
-                            "protected": false
-                        },
-                        {
-                            "label": 15003,
                             "interface": "eth3",
                             "neighbor": "10.1.0.9",
                             "protected": false
                         },
                         {
-                            "label": 15004,
+                            "label": 15003,
                             "interface": "eth4",
                             "neighbor": "10.1.0.11",
                             "protected": false
@@ -3206,12 +3187,6 @@
                     "sessions": [
                         {
                             "interface": "eth1",
-                            "multihop": false,
-                            "profile": "isis-fast",
-                            "mode": "async"
-                        },
-                        {
-                            "interface": "eth2",
                             "multihop": false,
                             "profile": "isis-fast",
                             "mode": "async"
@@ -3394,13 +3369,6 @@
                     "interfaces": [
                         {
                             "name": "eth1",
-                            "protection": "node-link",
-                            "enabled": true,
-                            "max_repair_sids": 3,
-                            "srlg_groups": []
-                        },
-                        {
-                            "name": "eth2",
                             "protection": "node-link",
                             "enabled": true,
                             "max_repair_sids": 3,
@@ -3781,14 +3749,14 @@
                         {
                             "name": "eth1",
                             "level": "L2",
-                            "metric": 10,
+                            "metric": 50,
                             "passive": false,
                             "network_type": "point-to-point"
                         },
                         {
                             "name": "eth2",
                             "level": "L2",
-                            "metric": 10,
+                            "metric": 50,
                             "passive": false,
                             "network_type": "point-to-point"
                         },
@@ -5087,6 +5055,14 @@
                         "mtu": 9000,
                         "ipv4": "10.1.0.26/31",
                         "type": "physical"
+                    },
+                    {
+                        "name": "eth5",
+                        "description": "to-pe2",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.1.0.5/31",
+                        "type": "physical"
                     }
                 ],
                 "isis_config": {
@@ -5126,6 +5102,13 @@
                             "name": "eth4",
                             "level": "L2",
                             "metric": 20,
+                            "passive": false,
+                            "network_type": "point-to-point"
+                        },
+                        {
+                            "name": "eth5",
+                            "level": "L2",
+                            "metric": 10,
                             "passive": false,
                             "network_type": "point-to-point"
                         }
@@ -5179,6 +5162,12 @@
                             "interface": "eth4",
                             "neighbor": "10.1.0.27",
                             "protected": false
+                        },
+                        {
+                            "label": 15005,
+                            "interface": "eth5",
+                            "neighbor": "10.1.0.4",
+                            "protected": false
                         }
                     ],
                     "mapping_server": false
@@ -5215,6 +5204,12 @@
                         },
                         {
                             "interface": "eth4",
+                            "multihop": false,
+                            "profile": "isis-fast",
+                            "mode": "async"
+                        },
+                        {
+                            "interface": "eth5",
                             "multihop": false,
                             "profile": "isis-fast",
                             "mode": "async"
@@ -5406,6 +5401,13 @@
                         },
                         {
                             "name": "eth4",
+                            "protection": "node-link",
+                            "enabled": true,
+                            "max_repair_sids": 3,
+                            "srlg_groups": []
+                        },
+                        {
+                            "name": "eth5",
                             "protection": "node-link",
                             "enabled": true,
                             "max_repair_sids": 3,

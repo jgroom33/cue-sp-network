@@ -27,7 +27,7 @@ pe1: device.#Device & {
 		interfaces: [
 			{name: "lo0", passive: true},
 			{name: "eth1", metric: 10},
-			{name: "eth2", metric: 10},
+			{name: "eth2", metric: 50},  // backup path to p2
 			{name: "eth5", metric: 15},
 			{name: "eth6", metric: 15},
 		]
