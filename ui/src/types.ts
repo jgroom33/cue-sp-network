@@ -102,6 +102,7 @@ export interface Device {
   ntp_config?: NTPConfig;
   ldp_config?: LDPConfig;
   netflow_config?: NetflowConfig;
+  erps_config?: ERPSConfig;
   static_routes?: StaticRoute[];
 }
 
@@ -739,4 +740,30 @@ export interface ValidationRule {
   description: string;
   status: "pass" | "fail";
   affectedDevices?: string[];
+}
+
+// G.8032 ERPS
+export interface ERPSConfig {
+  enabled: boolean;
+  rings: ERPSRing[];
+}
+
+export interface ERPSRing {
+  ring_id: number;
+  ring_name: string;
+  control_vlan: number;
+  data_vlans: number[];
+  ring_ports: ERPSPort[];
+  node_role: "rpl-owner" | "rpl-neighbor" | "transit";
+  rpl_port?: { port: string; role: string };
+  wait_to_restore: number;
+  guard_timer: number;
+  hold_off_timer?: number;
+  revertive: boolean;
+}
+
+export interface ERPSPort {
+  interface: string;
+  port_role: "east" | "west";
+  admin_state?: string;
 }

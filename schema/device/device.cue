@@ -29,6 +29,7 @@ import (
 	"github.com/jgroom/sp-network-model/schema/ldp"
 	"github.com/jgroom/sp-network-model/schema/ntp"
 	"github.com/jgroom/sp-network-model/schema/netflow"
+	"github.com/jgroom/sp-network-model/schema/erps"
 )
 
 #Device: {
@@ -63,6 +64,7 @@ import (
 	ldp_config?:          ldp.#LDPConfig
 	ntp_config?:          ntp.#NTPConfig
 	netflow_config?:      netflow.#NetflowConfig
+	erps_config?:         erps.#ERPSConfig
 	static_routes?:       [...common.#StaticRoute]
 	mgmt_vrf?:            common.#ManagementVRF
 

@@ -14,6 +14,7 @@
                 "asbr2",
                 "agg1",
                 "agg2",
+                "agg5",
                 "ce2",
                 "ce3",
                 "pce1",
@@ -32,6 +33,7 @@
                 "asbr2": "ASBR",
                 "agg1": "AGG",
                 "agg2": "AGG",
+                "agg5": "AGG",
                 "ce2": "CE",
                 "ce3": "CE",
                 "pce1": "PCE",
@@ -207,6 +209,28 @@
                 },
                 {
                     "a_end": {
+                        "device": "agg1",
+                        "interface": "eth3"
+                    },
+                    "z_end": {
+                        "device": "agg5",
+                        "interface": "eth1"
+                    },
+                    "type": "edge"
+                },
+                {
+                    "a_end": {
+                        "device": "agg5",
+                        "interface": "eth2"
+                    },
+                    "z_end": {
+                        "device": "pe1",
+                        "interface": "eth5"
+                    },
+                    "type": "edge"
+                },
+                {
+                    "a_end": {
                         "device": "pe2",
                         "interface": "eth6"
                     },
@@ -275,6 +299,7 @@
                 "agg2": "10.0.0.11",
                 "asbr2": "10.0.0.12",
                 "pce1": "10.0.0.13",
+                "agg5": "10.0.0.16",
                 "ce2": "192.168.2.1",
                 "ce3": "192.168.3.1"
             },
@@ -296,6 +321,8 @@
                 "p4-asbr1": "10.1.0.18/31",
                 "pe1-agg1": "10.1.0.20/31",
                 "pe2-agg2": "10.1.0.22/31",
+                "agg1-agg5": "10.1.0.32/31",
+                "agg5-pe1": "10.1.0.34/31",
                 "p3-asbr2": "10.1.0.24/31",
                 "p4-asbr2": "10.1.0.26/31",
                 "asbr1-upstream": "203.0.113.0/31",
@@ -370,8 +397,16 @@
                         "type": "physical"
                     },
                     {
+                        "name": "eth5",
+                        "description": "to-agg5-ring-west",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.1.0.34/31",
+                        "type": "physical"
+                    },
+                    {
                         "name": "eth6",
-                        "description": "to-agg1",
+                        "description": "to-agg1-ring-east",
                         "enabled": true,
                         "mtu": 9000,
                         "ipv4": "10.1.0.20/31",
@@ -401,6 +436,13 @@
                             "name": "eth2",
                             "level": "L2",
                             "metric": 50,
+                            "passive": false,
+                            "network_type": "point-to-point"
+                        },
+                        {
+                            "name": "eth5",
+                            "level": "L2",
+                            "metric": 15,
                             "passive": false,
                             "network_type": "point-to-point"
                         },
@@ -451,6 +493,12 @@
                             "protected": false
                         },
                         {
+                            "label": 15003,
+                            "interface": "eth5",
+                            "neighbor": "10.1.0.35",
+                            "protected": false
+                        },
+                        {
                             "label": 15004,
                             "interface": "eth6",
                             "neighbor": "10.1.0.21",
@@ -458,6 +506,84 @@
                         }
                     ],
                     "mapping_server": false
+                },
+                "acl_config": {
+                    "acls": [
+                        {
+                            "name": "INFRASTRUCTURE-PROTECT",
+                            "type": "ipv4-extended",
+                            "entries": [
+                                {
+                                    "sequence": 10,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "tcp",
+                                        "dst_port": 179
+                                    },
+                                    "description": "allow-bgp"
+                                },
+                                {
+                                    "sequence": 20,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "ospf"
+                                    },
+                                    "description": "allow-ospf"
+                                },
+                                {
+                                    "sequence": 30,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": 89
+                                    },
+                                    "description": "allow-ospf-proto"
+                                },
+                                {
+                                    "sequence": 40,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "udp",
+                                        "dst_port": 3784
+                                    },
+                                    "description": "allow-bfd-single"
+                                },
+                                {
+                                    "sequence": 50,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "udp",
+                                        "dst_port": 4784
+                                    },
+                                    "description": "allow-bfd-multi"
+                                },
+                                {
+                                    "sequence": 60,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "icmp"
+                                    },
+                                    "description": "allow-icmp"
+                                },
+                                {
+                                    "sequence": 70,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "udp",
+                                        "dst_port": 646
+                                    },
+                                    "description": "allow-ldp"
+                                },
+                                {
+                                    "sequence": 100,
+                                    "action": "deny",
+                                    "match": {},
+                                    "log": true,
+                                    "description": "deny-all-else"
+                                }
+                            ]
+                        }
+                    ],
+                    "interface_bindings": []
                 },
                 "bfd_config": {
                     "enabled": true,
@@ -493,6 +619,12 @@
                         },
                         {
                             "interface": "eth2",
+                            "multihop": false,
+                            "profile": "isis-fast",
+                            "mode": "async"
+                        },
+                        {
+                            "interface": "eth5",
                             "multihop": false,
                             "profile": "isis-fast",
                             "mode": "async"
@@ -620,6 +752,113 @@
                         "preserve_fw_state": true
                     }
                 },
+                "copp_config": {
+                    "enabled": true,
+                    "policy": {
+                        "name": "COPP-STANDARD",
+                        "entries": [
+                            {
+                                "protocol_class": "bgp",
+                                "policer": {
+                                    "cir": 10000,
+                                    "cbs": 8192,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "ospf",
+                                "policer": {
+                                    "cir": 10000,
+                                    "cbs": 8192,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "isis",
+                                "policer": {
+                                    "cir": 10000,
+                                    "cbs": 8192,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "bfd",
+                                "policer": {
+                                    "cir": 5000,
+                                    "cbs": 4096,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "icmp",
+                                "policer": {
+                                    "cir": 2000,
+                                    "cbs": 4096,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "ssh",
+                                "policer": {
+                                    "cir": 1000,
+                                    "cbs": 2048,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "snmp",
+                                "policer": {
+                                    "cir": 2000,
+                                    "cbs": 4096,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "ntp",
+                                "policer": {
+                                    "cir": 1000,
+                                    "cbs": 2048,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "lldp",
+                                "policer": {
+                                    "cir": 1000,
+                                    "cbs": 2048,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "arp",
+                                "policer": {
+                                    "cir": 2000,
+                                    "cbs": 4096,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "default",
+                                "policer": {
+                                    "cir": 500,
+                                    "cbs": 2048,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            }
+                        ]
+                    }
+                },
                 "dot1ad_config": {
                     "enabled": true,
                     "interfaces": [
@@ -637,6 +876,15 @@
                             ]
                         },
                         {
+                            "interface": "eth5",
+                            "port_mode": "NNI",
+                            "svlan": {
+                                "svlan_id": 300,
+                                "tpid": 34984
+                            },
+                            "cvlan_range": []
+                        },
+                        {
                             "interface": "eth6",
                             "port_mode": "NNI",
                             "svlan": {
@@ -644,6 +892,162 @@
                                 "tpid": 34984
                             },
                             "cvlan_range": []
+                        }
+                    ]
+                },
+                "erps_config": {
+                    "enabled": true,
+                    "rings": [
+                        {
+                            "ring_id": 1,
+                            "ring_name": "ACCESS-RING-1",
+                            "control_vlan": 4090,
+                            "data_vlans": [
+                                100,
+                                200,
+                                300
+                            ],
+                            "ring_ports": [
+                                {
+                                    "interface": "eth6",
+                                    "port_role": "east",
+                                    "admin_state": "forwarding"
+                                },
+                                {
+                                    "interface": "eth5",
+                                    "port_role": "west",
+                                    "admin_state": "blocked"
+                                }
+                            ],
+                            "node_role": "rpl-owner",
+                            "rpl_port": {
+                                "port": "west",
+                                "role": "owner"
+                            },
+                            "wait_to_restore": 5,
+                            "guard_timer": 500,
+                            "hold_off_timer": 0,
+                            "revertive": true
+                        }
+                    ]
+                },
+                "handoff_config": {
+                    "handoffs": [
+                        {
+                            "name": "pe1-to-ce2-via-agg1",
+                            "side": "pe",
+                            "interface": "eth6",
+                            "service_type": "l3vpn",
+                            "routing_protocol": "static",
+                            "static_routing": {
+                                "routes": [
+                                    {
+                                        "prefix": "10.2.1.0/31",
+                                        "next_hop": "10.1.0.21",
+                                        "description": "ce2-via-agg1"
+                                    }
+                                ]
+                            },
+                            "encapsulation": "dot1q",
+                            "dot1q_encap": {
+                                "config": {
+                                    "enabled": true,
+                                    "vlans": [],
+                                    "interfaces": [
+                                        {
+                                            "interface": "eth6",
+                                            "port_mode": "trunk",
+                                            "tpid": 33024,
+                                            "allowed_vlans": [
+                                                10,
+                                                20
+                                            ],
+                                            "ingress_filtering": true
+                                        }
+                                    ],
+                                    "classification_rules": []
+                                }
+                            },
+                            "qos": {
+                                "l2_qos": {
+                                    "enabled": true,
+                                    "mapping_tables": [
+                                        {
+                                            "name": "ce2-pcp-ingress",
+                                            "pcp_to_dscp": [
+                                                {
+                                                    "pcp": 5,
+                                                    "dei": 0,
+                                                    "dscp": "ef"
+                                                },
+                                                {
+                                                    "pcp": 4,
+                                                    "dei": 0,
+                                                    "dscp": "af41"
+                                                },
+                                                {
+                                                    "pcp": 3,
+                                                    "dei": 0,
+                                                    "dscp": "af21"
+                                                },
+                                                {
+                                                    "pcp": 0,
+                                                    "dei": 0,
+                                                    "dscp": "be"
+                                                }
+                                            ],
+                                            "pcp_to_mpls_tc": [],
+                                            "dscp_to_pcp": []
+                                        }
+                                    ],
+                                    "classification": [],
+                                    "remark_actions": [],
+                                    "vlan_bindings": []
+                                }
+                            },
+                            "vrf": "CUSTOMER-CE2"
+                        }
+                    ]
+                },
+                "l2vpn_config": {
+                    "enabled": true,
+                    "vpws": [
+                        {
+                            "name": "CUST-A-P2P",
+                            "service_id": 1001,
+                            "interface": "eth4",
+                            "pseudowire": {
+                                "pw_id": 1001,
+                                "peer": "10.0.0.2",
+                                "pw_type": "ethernet",
+                                "signaling": "ldp",
+                                "mtu": 9000,
+                                "control_word": true,
+                                "status_signaling": true
+                            },
+                            "split_horizon": false
+                        }
+                    ],
+                    "vpls": [
+                        {
+                            "name": "CUST-A-VPLS",
+                            "vpls_id": 2001,
+                            "rd": "65000:2001",
+                            "rt_import": [
+                                "65000:2001"
+                            ],
+                            "rt_export": [
+                                "65000:2001"
+                            ],
+                            "signaling": "bgp",
+                            "mac_table_size": 32768,
+                            "mac_aging_time": 300,
+                            "mac_withdraw": true,
+                            "interfaces": [
+                                "eth3.100"
+                            ],
+                            "pseudowires": [],
+                            "split_horizon": true
                         }
                     ]
                 },
@@ -687,6 +1091,12 @@
                             "receive": true
                         },
                         {
+                            "name": "eth5",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        },
+                        {
                             "name": "eth6",
                             "enabled": true,
                             "transmit": true,
@@ -694,6 +1104,44 @@
                         }
                     ],
                     "med_policies": []
+                },
+                "mgmt_vrf": {
+                    "vrf_name": "MGMT",
+                    "interface": "mgmt0",
+                    "ipv4": "10.100.0.1/24",
+                    "gateway": "10.100.0.254"
+                },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
                 },
                 "qos_config": {
                     "enabled": true,
@@ -913,9 +1361,65 @@
                             "egress_policy": "SP-EGRESS"
                         },
                         {
+                            "interface": "eth5",
+                            "ingress_policy": "SP-INGRESS",
+                            "egress_policy": "SP-EGRESS"
+                        },
+                        {
                             "interface": "eth6",
                             "ingress_policy": "SP-INGRESS",
                             "egress_policy": "SP-EGRESS"
+                        }
+                    ]
+                },
+                "route_policy_config": {
+                    "prefix_lists": [],
+                    "community_lists": [
+                        {
+                            "name": "CUSTOMER-ROUTES",
+                            "type": "standard",
+                            "entries": [
+                                {
+                                    "action": "permit",
+                                    "match_type": "exact",
+                                    "community": "65000:100"
+                                }
+                            ]
+                        }
+                    ],
+                    "as_path_lists": [],
+                    "route_maps": [
+                        {
+                            "name": "PE-CE-IMPORT",
+                            "entries": [
+                                {
+                                    "sequence": 10,
+                                    "action": "permit",
+                                    "set": {
+                                        "local_pref": 200,
+                                        "community": [
+                                            "65000:100"
+                                        ],
+                                        "community_mode": "add"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PE-CE-EXPORT",
+                            "entries": [
+                                {
+                                    "sequence": 10,
+                                    "action": "permit",
+                                    "match": {
+                                        "community_list": "CUSTOMER-ROUTES"
+                                    }
+                                },
+                                {
+                                    "sequence": 999,
+                                    "action": "deny"
+                                }
+                            ]
                         }
                     ]
                 },
@@ -1092,6 +1596,13 @@
                             "srlg_groups": []
                         },
                         {
+                            "name": "eth5",
+                            "protection": "link",
+                            "enabled": true,
+                            "max_repair_sids": 3,
+                            "srlg_groups": []
+                        },
+                        {
                             "name": "eth6",
                             "protection": "link",
                             "enabled": true,
@@ -1117,48 +1628,6 @@
                         "type": "local"
                     },
                     "preprogrammed": true
-                },
-                "l2vpn_config": {
-                    "enabled": true,
-                    "vpws": [
-                        {
-                            "name": "CUST-A-P2P",
-                            "service_id": 1001,
-                            "interface": "eth4",
-                            "pseudowire": {
-                                "pw_id": 1001,
-                                "peer": "10.0.0.2",
-                                "pw_type": "ethernet",
-                                "signaling": "ldp",
-                                "mtu": 9000,
-                                "control_word": true,
-                                "status_signaling": true
-                            },
-                            "split_horizon": false
-                        }
-                    ],
-                    "vpls": [
-                        {
-                            "name": "CUST-A-VPLS",
-                            "vpls_id": 2001,
-                            "rd": "65000:2001",
-                            "rt_import": [
-                                "65000:2001"
-                            ],
-                            "rt_export": [
-                                "65000:2001"
-                            ],
-                            "signaling": "bgp",
-                            "mac_table_size": 32768,
-                            "mac_aging_time": 300,
-                            "mac_withdraw": true,
-                            "interfaces": [
-                                "eth3.100"
-                            ],
-                            "pseudowires": [],
-                            "split_horizon": true
-                        }
-                    ]
                 },
                 "vxlan_config": {
                     "enabled": true,
@@ -1207,358 +1676,6 @@
                         ]
                     },
                     "ethernet_segments": []
-                },
-                "acl_config": {
-                    "acls": [
-                        {
-                            "name": "INFRASTRUCTURE-PROTECT",
-                            "type": "ipv4-extended",
-                            "entries": [
-                                {
-                                    "sequence": 10,
-                                    "action": "permit",
-                                    "match": {
-                                        "protocol": "tcp",
-                                        "dst_port": 179
-                                    },
-                                    "description": "allow-bgp"
-                                },
-                                {
-                                    "sequence": 20,
-                                    "action": "permit",
-                                    "match": {
-                                        "protocol": "ospf"
-                                    },
-                                    "description": "allow-ospf"
-                                },
-                                {
-                                    "sequence": 30,
-                                    "action": "permit",
-                                    "match": {
-                                        "protocol": 89
-                                    },
-                                    "description": "allow-ospf-proto"
-                                },
-                                {
-                                    "sequence": 40,
-                                    "action": "permit",
-                                    "match": {
-                                        "protocol": "udp",
-                                        "dst_port": 3784
-                                    },
-                                    "description": "allow-bfd-single"
-                                },
-                                {
-                                    "sequence": 50,
-                                    "action": "permit",
-                                    "match": {
-                                        "protocol": "udp",
-                                        "dst_port": 4784
-                                    },
-                                    "description": "allow-bfd-multi"
-                                },
-                                {
-                                    "sequence": 60,
-                                    "action": "permit",
-                                    "match": {
-                                        "protocol": "icmp"
-                                    },
-                                    "description": "allow-icmp"
-                                },
-                                {
-                                    "sequence": 70,
-                                    "action": "permit",
-                                    "match": {
-                                        "protocol": "udp",
-                                        "dst_port": 646
-                                    },
-                                    "description": "allow-ldp"
-                                },
-                                {
-                                    "sequence": 100,
-                                    "action": "deny",
-                                    "match": {},
-                                    "log": true,
-                                    "description": "deny-all-else"
-                                }
-                            ]
-                        }
-                    ],
-                    "interface_bindings": []
-                },
-                "copp_config": {
-                    "enabled": true,
-                    "policy": {
-                        "name": "COPP-STANDARD",
-                        "entries": [
-                            {
-                                "protocol_class": "bgp",
-                                "policer": {
-                                    "cir": 10000,
-                                    "cbs": 8192,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "ospf",
-                                "policer": {
-                                    "cir": 10000,
-                                    "cbs": 8192,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "isis",
-                                "policer": {
-                                    "cir": 10000,
-                                    "cbs": 8192,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "bfd",
-                                "policer": {
-                                    "cir": 5000,
-                                    "cbs": 4096,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "icmp",
-                                "policer": {
-                                    "cir": 2000,
-                                    "cbs": 4096,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "ssh",
-                                "policer": {
-                                    "cir": 1000,
-                                    "cbs": 2048,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "snmp",
-                                "policer": {
-                                    "cir": 2000,
-                                    "cbs": 4096,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "ntp",
-                                "policer": {
-                                    "cir": 1000,
-                                    "cbs": 2048,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "lldp",
-                                "policer": {
-                                    "cir": 1000,
-                                    "cbs": 2048,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "arp",
-                                "policer": {
-                                    "cir": 2000,
-                                    "cbs": 4096,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            },
-                            {
-                                "protocol_class": "default",
-                                "policer": {
-                                    "cir": 500,
-                                    "cbs": 2048,
-                                    "conform_action": "transmit",
-                                    "exceed_action": "drop"
-                                }
-                            }
-                        ]
-                    }
-                },
-                "handoff_config": {
-                    "handoffs": [
-                        {
-                            "name": "pe1-to-ce2-via-agg1",
-                            "side": "pe",
-                            "interface": "eth6",
-                            "service_type": "l3vpn",
-                            "routing_protocol": "static",
-                            "static_routing": {
-                                "routes": [
-                                    {
-                                        "prefix": "10.2.1.0/31",
-                                        "next_hop": "10.1.0.21",
-                                        "description": "ce2-via-agg1"
-                                    }
-                                ]
-                            },
-                            "encapsulation": "dot1q",
-                            "dot1q_encap": {
-                                "config": {
-                                    "enabled": true,
-                                    "vlans": [],
-                                    "interfaces": [
-                                        {
-                                            "interface": "eth6",
-                                            "port_mode": "trunk",
-                                            "tpid": 33024,
-                                            "allowed_vlans": [
-                                                10,
-                                                20
-                                            ],
-                                            "ingress_filtering": true
-                                        }
-                                    ],
-                                    "classification_rules": []
-                                }
-                            },
-                            "qos": {
-                                "l2_qos": {
-                                    "enabled": true,
-                                    "mapping_tables": [
-                                        {
-                                            "name": "ce2-pcp-ingress",
-                                            "pcp_to_dscp": [
-                                                {
-                                                    "pcp": 5,
-                                                    "dei": 0,
-                                                    "dscp": "ef"
-                                                },
-                                                {
-                                                    "pcp": 4,
-                                                    "dei": 0,
-                                                    "dscp": "af41"
-                                                },
-                                                {
-                                                    "pcp": 3,
-                                                    "dei": 0,
-                                                    "dscp": "af21"
-                                                },
-                                                {
-                                                    "pcp": 0,
-                                                    "dei": 0,
-                                                    "dscp": "be"
-                                                }
-                                            ],
-                                            "pcp_to_mpls_tc": [],
-                                            "dscp_to_pcp": []
-                                        }
-                                    ],
-                                    "classification": [],
-                                    "remark_actions": [],
-                                    "vlan_bindings": []
-                                }
-                            },
-                            "vrf": "CUSTOMER-CE2"
-                        }
-                    ]
-                },
-                "mgmt_vrf": {
-                    "vrf_name": "MGMT",
-                    "interface": "mgmt0",
-                    "ipv4": "10.100.0.1/24",
-                    "gateway": "10.100.0.254"
-                },
-                "ntp_config": {
-                    "enabled": true,
-                    "servers": [
-                        {
-                            "address": "10.100.0.200",
-                            "prefer": true,
-                            "version": 4,
-                            "key_id": 1,
-                            "iburst": true,
-                            "vrf": "MGMT"
-                        },
-                        {
-                            "address": "10.100.0.201",
-                            "version": 4,
-                            "key_id": 1,
-                            "iburst": true,
-                            "vrf": "MGMT"
-                        }
-                    ],
-                    "peers": [],
-                    "authentication": [
-                        {
-                            "key_id": 1,
-                            "type": "sha256",
-                            "key": "NTP-AUTH-KEY-1",
-                            "trusted": true
-                        }
-                    ],
-                    "source_interface": "lo0",
-                    "access_groups": [],
-                    "logging": true
-                },
-                "route_policy_config": {
-                    "prefix_lists": [],
-                    "community_lists": [
-                        {
-                            "name": "CUSTOMER-ROUTES",
-                            "type": "standard",
-                            "entries": [
-                                {
-                                    "action": "permit",
-                                    "match_type": "exact",
-                                    "community": "65000:100"
-                                }
-                            ]
-                        }
-                    ],
-                    "as_path_lists": [],
-                    "route_maps": [
-                        {
-                            "name": "PE-CE-IMPORT",
-                            "entries": [
-                                {
-                                    "sequence": 10,
-                                    "action": "permit",
-                                    "set": {
-                                        "local_pref": 200,
-                                        "community": [
-                                            "65000:100"
-                                        ],
-                                        "community_mode": "add"
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            "name": "PE-CE-EXPORT",
-                            "entries": [
-                                {
-                                    "sequence": 10,
-                                    "action": "permit",
-                                    "match": {
-                                        "community_list": "CUSTOMER-ROUTES"
-                                    }
-                                },
-                                {
-                                    "sequence": 999,
-                                    "action": "deny"
-                                }
-                            ]
-                        }
-                    ]
                 }
             },
             "pe2": {
@@ -8584,6 +8701,14 @@
                         "mtu": 9000,
                         "ipv4": "10.2.1.0/31",
                         "type": "physical"
+                    },
+                    {
+                        "name": "eth3",
+                        "description": "to-agg5-ring",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.1.0.32/31",
+                        "type": "physical"
                     }
                 ],
                 "isis_config": {
@@ -8600,6 +8725,13 @@
                         },
                         {
                             "name": "eth1",
+                            "level": "L2",
+                            "metric": 10,
+                            "passive": false,
+                            "network_type": "point-to-point"
+                        },
+                        {
+                            "name": "eth3",
                             "level": "L2",
                             "metric": 10,
                             "passive": false,
@@ -8637,6 +8769,12 @@
                             "interface": "eth1",
                             "neighbor": "10.1.0.20",
                             "protected": false
+                        },
+                        {
+                            "label": 15002,
+                            "interface": "eth3",
+                            "neighbor": "10.1.0.33",
+                            "protected": false
                         }
                     ],
                     "mapping_server": false
@@ -8655,6 +8793,12 @@
                     "sessions": [
                         {
                             "interface": "eth1",
+                            "multihop": false,
+                            "profile": "isis-fast",
+                            "mode": "async"
+                        },
+                        {
+                            "interface": "eth3",
                             "multihop": false,
                             "profile": "isis-fast",
                             "mode": "async"
@@ -8848,6 +8992,13 @@
                             "enabled": true,
                             "max_repair_sids": 3,
                             "srlg_groups": []
+                        },
+                        {
+                            "name": "eth3",
+                            "protection": "link",
+                            "enabled": true,
+                            "max_repair_sids": 3,
+                            "srlg_groups": []
                         }
                     ],
                     "srlgs": [],
@@ -8860,36 +9011,6 @@
                         "type": "local"
                     },
                     "preprogrammed": true
-                },
-                "lldp_config": {
-                    "enabled": true,
-                    "tx_interval": 30,
-                    "hold_multiplier": 4,
-                    "reinit_delay": 2,
-                    "tx_delay": 2,
-                    "chassis_id_subtype": "mac-address",
-                    "optional_tlvs": [
-                        "system-name",
-                        "system-description",
-                        "system-capabilities",
-                        "port-description",
-                        "management-address"
-                    ],
-                    "interfaces": [
-                        {
-                            "name": "eth1",
-                            "enabled": true,
-                            "transmit": true,
-                            "receive": true
-                        },
-                        {
-                            "name": "eth2",
-                            "enabled": true,
-                            "transmit": true,
-                            "receive": true
-                        }
-                    ],
-                    "med_policies": []
                 },
                 "acl_config": {
                     "acls": [
@@ -9099,8 +9220,85 @@
                                 10,
                                 20
                             ]
+                        },
+                        {
+                            "interface": "eth3",
+                            "port_mode": "NNI",
+                            "svlan": {
+                                "svlan_id": 300,
+                                "tpid": 34984
+                            },
+                            "cvlan_range": []
                         }
                     ]
+                },
+                "erps_config": {
+                    "enabled": true,
+                    "rings": [
+                        {
+                            "ring_id": 1,
+                            "ring_name": "ACCESS-RING-1",
+                            "control_vlan": 4090,
+                            "data_vlans": [
+                                100,
+                                200,
+                                300
+                            ],
+                            "ring_ports": [
+                                {
+                                    "interface": "eth1",
+                                    "port_role": "east",
+                                    "admin_state": "forwarding"
+                                },
+                                {
+                                    "interface": "eth3",
+                                    "port_role": "west",
+                                    "admin_state": "forwarding"
+                                }
+                            ],
+                            "node_role": "rpl-neighbor",
+                            "wait_to_restore": 5,
+                            "guard_timer": 500,
+                            "hold_off_timer": 0,
+                            "revertive": true
+                        }
+                    ]
+                },
+                "lldp_config": {
+                    "enabled": true,
+                    "tx_interval": 30,
+                    "hold_multiplier": 4,
+                    "reinit_delay": 2,
+                    "tx_delay": 2,
+                    "chassis_id_subtype": "mac-address",
+                    "optional_tlvs": [
+                        "system-name",
+                        "system-description",
+                        "system-capabilities",
+                        "port-description",
+                        "management-address"
+                    ],
+                    "interfaces": [
+                        {
+                            "name": "eth1",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        },
+                        {
+                            "name": "eth2",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        },
+                        {
+                            "name": "eth3",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        }
+                    ],
+                    "med_policies": []
                 },
                 "mgmt_vrf": {
                     "vrf_name": "MGMT",
@@ -9724,6 +9922,598 @@
                     "source_interface": "lo0",
                     "access_groups": [],
                     "logging": true
+                }
+            },
+            "agg5": {
+                "hostname": "agg5",
+                "role": "AGG",
+                "router_id": "10.0.0.16",
+                "interfaces": [
+                    {
+                        "name": "lo0",
+                        "description": "",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.0.0.16/32",
+                        "type": "loopback"
+                    },
+                    {
+                        "name": "eth1",
+                        "description": "to-agg1-ring-east",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.1.0.33/31",
+                        "type": "physical"
+                    },
+                    {
+                        "name": "eth2",
+                        "description": "to-pe1-ring-west",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.1.0.35/31",
+                        "type": "physical"
+                    }
+                ],
+                "isis_config": {
+                    "instance": "default",
+                    "net": "49.0001.0000.0000.0016.00",
+                    "level": "L1L2",
+                    "interfaces": [
+                        {
+                            "name": "lo0",
+                            "level": "L2",
+                            "metric": 10,
+                            "passive": true,
+                            "network_type": "point-to-point"
+                        },
+                        {
+                            "name": "eth1",
+                            "level": "L2",
+                            "metric": 10,
+                            "passive": false,
+                            "network_type": "point-to-point"
+                        },
+                        {
+                            "name": "eth2",
+                            "level": "L2",
+                            "metric": 10,
+                            "passive": false,
+                            "network_type": "point-to-point"
+                        }
+                    ],
+                    "authentication": {
+                        "type": "md5",
+                        "key": "ISIS-KEY-1",
+                        "key_id": 1
+                    },
+                    "lsp_mtu": 1492,
+                    "overload_bit": false
+                },
+                "sr_config": {
+                    "enabled": true,
+                    "srgb": {
+                        "start": 16000,
+                        "end": 23999
+                    },
+                    "srlb": {
+                        "start": 15000,
+                        "end": 15999
+                    },
+                    "node_sids": [
+                        {
+                            "index": 16,
+                            "prefix": "10.0.0.16/32",
+                            "php": true
+                        }
+                    ],
+                    "adj_sids": [
+                        {
+                            "label": 15001,
+                            "interface": "eth1",
+                            "neighbor": "10.1.0.32",
+                            "protected": false
+                        },
+                        {
+                            "label": 15002,
+                            "interface": "eth2",
+                            "neighbor": "10.1.0.34",
+                            "protected": false
+                        }
+                    ],
+                    "mapping_server": false
+                },
+                "acl_config": {
+                    "acls": [
+                        {
+                            "name": "INFRASTRUCTURE-PROTECT",
+                            "type": "ipv4-extended",
+                            "entries": [
+                                {
+                                    "sequence": 10,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "tcp",
+                                        "dst_port": 179
+                                    },
+                                    "description": "allow-bgp"
+                                },
+                                {
+                                    "sequence": 20,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "ospf"
+                                    },
+                                    "description": "allow-ospf"
+                                },
+                                {
+                                    "sequence": 30,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": 89
+                                    },
+                                    "description": "allow-ospf-proto"
+                                },
+                                {
+                                    "sequence": 40,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "udp",
+                                        "dst_port": 3784
+                                    },
+                                    "description": "allow-bfd-single"
+                                },
+                                {
+                                    "sequence": 50,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "udp",
+                                        "dst_port": 4784
+                                    },
+                                    "description": "allow-bfd-multi"
+                                },
+                                {
+                                    "sequence": 60,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "icmp"
+                                    },
+                                    "description": "allow-icmp"
+                                },
+                                {
+                                    "sequence": 70,
+                                    "action": "permit",
+                                    "match": {
+                                        "protocol": "udp",
+                                        "dst_port": 646
+                                    },
+                                    "description": "allow-ldp"
+                                },
+                                {
+                                    "sequence": 100,
+                                    "action": "deny",
+                                    "match": {},
+                                    "log": true,
+                                    "description": "deny-all-else"
+                                }
+                            ]
+                        }
+                    ],
+                    "interface_bindings": []
+                },
+                "bfd_config": {
+                    "enabled": true,
+                    "profiles": [
+                        {
+                            "name": "isis-fast",
+                            "min_tx": 100,
+                            "min_rx": 100,
+                            "detect_multiplier": 3,
+                            "echo_mode": false
+                        }
+                    ],
+                    "sessions": [
+                        {
+                            "interface": "eth1",
+                            "multihop": false,
+                            "profile": "isis-fast",
+                            "mode": "async"
+                        },
+                        {
+                            "interface": "eth2",
+                            "multihop": false,
+                            "profile": "isis-fast",
+                            "mode": "async"
+                        }
+                    ],
+                    "sbfd_reflector": {
+                        "discriminator": 100016
+                    },
+                    "default_profile": {
+                        "name": "default",
+                        "min_tx": 300,
+                        "min_rx": 300,
+                        "detect_multiplier": 3
+                    }
+                },
+                "copp_config": {
+                    "enabled": true,
+                    "policy": {
+                        "name": "COPP-STANDARD",
+                        "entries": [
+                            {
+                                "protocol_class": "bgp",
+                                "policer": {
+                                    "cir": 10000,
+                                    "cbs": 8192,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "ospf",
+                                "policer": {
+                                    "cir": 10000,
+                                    "cbs": 8192,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "isis",
+                                "policer": {
+                                    "cir": 10000,
+                                    "cbs": 8192,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "bfd",
+                                "policer": {
+                                    "cir": 5000,
+                                    "cbs": 4096,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "icmp",
+                                "policer": {
+                                    "cir": 2000,
+                                    "cbs": 4096,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "ssh",
+                                "policer": {
+                                    "cir": 1000,
+                                    "cbs": 2048,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "snmp",
+                                "policer": {
+                                    "cir": 2000,
+                                    "cbs": 4096,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "ntp",
+                                "policer": {
+                                    "cir": 1000,
+                                    "cbs": 2048,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "lldp",
+                                "policer": {
+                                    "cir": 1000,
+                                    "cbs": 2048,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "arp",
+                                "policer": {
+                                    "cir": 2000,
+                                    "cbs": 4096,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            },
+                            {
+                                "protocol_class": "default",
+                                "policer": {
+                                    "cir": 500,
+                                    "cbs": 2048,
+                                    "conform_action": "transmit",
+                                    "exceed_action": "drop"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "dot1ad_config": {
+                    "enabled": true,
+                    "interfaces": [
+                        {
+                            "interface": "eth1",
+                            "port_mode": "NNI",
+                            "svlan": {
+                                "svlan_id": 300,
+                                "tpid": 34984
+                            },
+                            "cvlan_range": []
+                        },
+                        {
+                            "interface": "eth2",
+                            "port_mode": "NNI",
+                            "svlan": {
+                                "svlan_id": 300,
+                                "tpid": 34984
+                            },
+                            "cvlan_range": []
+                        }
+                    ]
+                },
+                "erps_config": {
+                    "enabled": true,
+                    "rings": [
+                        {
+                            "ring_id": 1,
+                            "ring_name": "ACCESS-RING-1",
+                            "control_vlan": 4090,
+                            "data_vlans": [
+                                100,
+                                200,
+                                300
+                            ],
+                            "ring_ports": [
+                                {
+                                    "interface": "eth1",
+                                    "port_role": "east",
+                                    "admin_state": "forwarding"
+                                },
+                                {
+                                    "interface": "eth2",
+                                    "port_role": "west",
+                                    "admin_state": "forwarding"
+                                }
+                            ],
+                            "node_role": "transit",
+                            "wait_to_restore": 5,
+                            "guard_timer": 500,
+                            "hold_off_timer": 0,
+                            "revertive": true
+                        }
+                    ]
+                },
+                "lldp_config": {
+                    "enabled": true,
+                    "tx_interval": 30,
+                    "hold_multiplier": 4,
+                    "reinit_delay": 2,
+                    "tx_delay": 2,
+                    "chassis_id_subtype": "mac-address",
+                    "optional_tlvs": [
+                        "system-name",
+                        "system-description",
+                        "system-capabilities",
+                        "port-description",
+                        "management-address"
+                    ],
+                    "interfaces": [
+                        {
+                            "name": "eth1",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        },
+                        {
+                            "name": "eth2",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        }
+                    ],
+                    "med_policies": []
+                },
+                "mgmt_vrf": {
+                    "vrf_name": "MGMT",
+                    "interface": "mgmt0",
+                    "ipv4": "10.100.0.16/24",
+                    "gateway": "10.100.0.254"
+                },
+                "ntp_config": {
+                    "enabled": true,
+                    "servers": [
+                        {
+                            "address": "10.100.0.200",
+                            "prefer": true,
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        },
+                        {
+                            "address": "10.100.0.201",
+                            "version": 4,
+                            "key_id": 1,
+                            "iburst": true,
+                            "vrf": "MGMT"
+                        }
+                    ],
+                    "peers": [],
+                    "authentication": [
+                        {
+                            "key_id": 1,
+                            "type": "sha256",
+                            "key": "NTP-AUTH-KEY-1",
+                            "trusted": true
+                        }
+                    ],
+                    "source_interface": "lo0",
+                    "access_groups": [],
+                    "logging": true
+                },
+                "qos_config": {
+                    "enabled": true,
+                    "forwarding_classes": [
+                        {
+                            "name": "network-control",
+                            "dscp_match": [
+                                "cs6",
+                                "cs7"
+                            ],
+                            "mpls_tc": 7,
+                            "queue_id": 7
+                        },
+                        {
+                            "name": "voice",
+                            "dscp_match": [
+                                "ef"
+                            ],
+                            "mpls_tc": 5,
+                            "queue_id": 5
+                        },
+                        {
+                            "name": "video",
+                            "dscp_match": [
+                                "af41",
+                                "af42",
+                                "af43",
+                                "cs4"
+                            ],
+                            "mpls_tc": 4,
+                            "queue_id": 4
+                        },
+                        {
+                            "name": "critical-data",
+                            "dscp_match": [
+                                "af21",
+                                "af22",
+                                "af23",
+                                "cs2"
+                            ],
+                            "mpls_tc": 3,
+                            "queue_id": 3
+                        },
+                        {
+                            "name": "bulk-data",
+                            "dscp_match": [
+                                "af11",
+                                "af12",
+                                "af13",
+                                "cs1"
+                            ],
+                            "mpls_tc": 2,
+                            "queue_id": 2
+                        },
+                        {
+                            "name": "best-effort",
+                            "dscp_match": [
+                                "be",
+                                "cs0"
+                            ],
+                            "mpls_tc": 0,
+                            "queue_id": 0
+                        }
+                    ],
+                    "policies": [
+                        {
+                            "name": "CORE-EGRESS",
+                            "type": "egress",
+                            "classification": [],
+                            "policers": [],
+                            "shapers": [],
+                            "schedulers": [
+                                {
+                                    "queue_id": 7,
+                                    "type": "strict-priority",
+                                    "priority": 0
+                                },
+                                {
+                                    "queue_id": 5,
+                                    "type": "strict-priority",
+                                    "priority": 1
+                                },
+                                {
+                                    "queue_id": 4,
+                                    "type": "weighted-fair",
+                                    "weight": 30,
+                                    "bandwidth_percent": 30
+                                },
+                                {
+                                    "queue_id": 3,
+                                    "type": "weighted-fair",
+                                    "weight": 25,
+                                    "bandwidth_percent": 25
+                                },
+                                {
+                                    "queue_id": 2,
+                                    "type": "weighted-fair",
+                                    "weight": 15,
+                                    "bandwidth_percent": 10
+                                },
+                                {
+                                    "queue_id": 0,
+                                    "type": "weighted-fair",
+                                    "weight": 10,
+                                    "bandwidth_percent": 5
+                                }
+                            ],
+                            "wred_profiles": []
+                        }
+                    ],
+                    "interface_bindings": [
+                        {
+                            "interface": "eth1",
+                            "egress_policy": "CORE-EGRESS"
+                        },
+                        {
+                            "interface": "eth2",
+                            "egress_policy": "CORE-EGRESS"
+                        }
+                    ]
+                },
+                "tilfa_config": {
+                    "enabled": true,
+                    "default_protection": "link",
+                    "interfaces": [
+                        {
+                            "name": "eth1",
+                            "protection": "link",
+                            "enabled": true,
+                            "max_repair_sids": 3,
+                            "srlg_groups": []
+                        },
+                        {
+                            "name": "eth2",
+                            "protection": "link",
+                            "enabled": true,
+                            "max_repair_sids": 3,
+                            "srlg_groups": []
+                        }
+                    ],
+                    "srlgs": [],
+                    "policy": {
+                        "name": "default"
+                    },
+                    "microloop_avoidance": {
+                        "enabled": true,
+                        "rib_update_delay": 5000,
+                        "type": "local"
+                    },
+                    "preprogrammed": true
                 }
             },
             "pce1": {

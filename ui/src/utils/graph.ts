@@ -51,8 +51,9 @@ const fixedPositions: Record<string, { x: number; y: number }> = {
   // PEs — below P core, left/right aligned
   pe1:            { x: 0.25, y: 0.64 },
   pe2:            { x: 0.75, y: 0.64 },
-  // AGGs — below PEs
-  agg1:           { x: 0.25, y: 0.78 },
+  // AGGs — G.8032 ring off PE1 (agg1 + agg5), standalone agg2 off PE2
+  agg1:           { x: 0.32, y: 0.78 },
+  agg5:           { x: 0.12, y: 0.72 },
   agg2:           { x: 0.75, y: 0.78 },
   // CEs — bottom tier
   ce2:            { x: 0.25, y: 0.92 },
@@ -165,6 +166,7 @@ export function getDeviceProtocols(device: Device): string[] {
   if (device.dot1ad_config?.enabled) protocols.push("802.1ad");
   if (device.l2qos_config?.enabled) protocols.push("L2 QoS");
   if (device.route_policy_config) protocols.push("Route Policy");
+  if (device.erps_config?.enabled) protocols.push("G.8032");
   if (device.handoff_config) protocols.push("Handoff");
   if (device.lldp_config?.enabled) protocols.push("LLDP");
   return protocols;
@@ -175,5 +177,5 @@ export const ALL_PROTOCOLS = [
   "IS-IS", "SR-MPLS", "BGP", "OSPF", "BFD", "QoS", "TI-LFA",
   "SR Policy", "VXLAN", "L2VPN", "VRRP", "ACL", "CoPP", "RPKI",
   "MACsec", "Flowspec", "802.1Q", "802.1ad", "L2 QoS", "Route Policy",
-  "Handoff", "LLDP",
+  "G.8032", "Handoff", "LLDP",
 ];

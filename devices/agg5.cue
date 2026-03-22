@@ -2,38 +2,36 @@ package devices
 
 import "github.com/jgroom/sp-network-model/schema/device"
 
-agg1: device.#Device & {
-	hostname:  "agg1"
+// AGG5: aggregation switch in G.8032 ring with PE1 and AGG1
+agg5: device.#Device & {
+	hostname:  "agg5"
 	role:      "AGG"
-	router_id: "10.0.0.10"
+	router_id: "10.0.0.16"
 
 	interfaces: [
-		{name: "lo0", type: "loopback", ipv4: "10.0.0.10/32"},
-		{name: "eth1", type: "physical", ipv4: "10.1.0.21/31", description: "to-pe1-nni"},
-		{name: "eth2", type: "physical", ipv4: "10.2.1.0/31", description: "to-ce2"},
-		{name: "eth3", type: "physical", ipv4: "10.1.0.32/31", description: "to-agg5-ring"},
+		{name: "lo0", type: "loopback", ipv4: "10.0.0.16/32"},
+		{name: "eth1", type: "physical", ipv4: "10.1.0.33/31", description: "to-agg1-ring-east"},
+		{name: "eth2", type: "physical", ipv4: "10.1.0.35/31", description: "to-pe1-ring-west"},
 	]
 
-	// IS-IS L1L2: L2 toward PE/core, L1L2 boundary for access aggregation
 	isis_config: {
-		net:   "49.0001.0000.0000.0010.00"
+		net:   "49.0001.0000.0000.0016.00"
 		level: "L1L2"
 		authentication: {type: "md5", key: "ISIS-KEY-1", key_id: 1}
 		interfaces: [
 			{name: "lo0", passive: true},
 			{name: "eth1", level: "L2", metric: 10},
-			{name: "eth3", level: "L2", metric: 10},
-			// eth2 not in IS-IS — customer-facing
+			{name: "eth2", level: "L2", metric: 10},
 		]
 	}
 
 	sr_config: {
 		srgb: {start: 16000, end: 23999}
 		srlb: {start: 15000, end: 15999}
-		node_sids: [{index: 10, prefix: "10.0.0.10/32"}]
+		node_sids: [{index: 16, prefix: "10.0.0.16/32"}]
 		adj_sids: [
-			{label: 15001, interface: "eth1", neighbor: "10.1.0.20"},
-			{label: 15002, interface: "eth3", neighbor: "10.1.0.33"},
+			{label: 15001, interface: "eth1", neighbor: "10.1.0.32"},
+			{label: 15002, interface: "eth2", neighbor: "10.1.0.34"},
 		]
 	}
 
@@ -41,7 +39,7 @@ agg1: device.#Device & {
 		default_protection: "link"
 		interfaces: [
 			{name: "eth1", protection: "link"},
-			{name: "eth3", protection: "link"},
+			{name: "eth2", protection: "link"},
 		]
 		microloop_avoidance: {enabled: true, rib_update_delay: 5000}
 	}
@@ -50,9 +48,26 @@ agg1: device.#Device & {
 		profiles: [{name: "isis-fast", min_tx: 100, min_rx: 100, detect_multiplier: 3}]
 		sessions: [
 			{interface: "eth1", profile: "isis-fast"},
-			{interface: "eth3", profile: "isis-fast"},
+			{interface: "eth2", profile: "isis-fast"},
 		]
-		sbfd_reflector: {discriminator: 100010}
+		sbfd_reflector: {discriminator: 100016}
+	}
+
+	// --- G.8032 ERPS ring: transit node ---
+	erps_config: {
+		rings: [{
+			ring_id: 1, ring_name: "ACCESS-RING-1"
+			control_vlan: 4090
+			data_vlans: [100, 200, 300]
+			ring_ports: [
+				{interface: "eth1", port_role: "east"},
+				{interface: "eth2", port_role: "west"},
+			]
+			node_role: "transit"
+			wait_to_restore: 5
+			guard_timer: 500
+			revertive: true
+		}]
 	}
 
 	qos_config: {
@@ -65,20 +80,6 @@ agg1: device.#Device & {
 			{name: "best-effort",     dscp_match: ["be", "cs0"],  mpls_tc: 0, queue_id: 0},
 		]
 		policies: [
-			{
-				name: "ACCESS-INGRESS", type: "ingress"
-				classification: [
-					{name: "match-voice", match_dscp: ["ef"], forwarding_class: "voice"},
-					{name: "match-video", match_dscp: ["af41", "af42", "af43"], forwarding_class: "video"},
-					{name: "match-critical", match_dscp: ["af21", "af22", "af23"], forwarding_class: "critical-data"},
-				]
-				policers: [{
-					name: "ce2-policer", type: "single-rate"
-					cir: 100000, cbs: 32768
-					conform_action: {action: "transmit"}
-					exceed_action: {action: "drop"}
-				}]
-			},
 			{
 				name: "CORE-EGRESS", type: "egress"
 				schedulers: [
@@ -93,52 +94,31 @@ agg1: device.#Device & {
 		]
 		interface_bindings: [
 			{interface: "eth1", egress_policy: "CORE-EGRESS"},
-			{interface: "eth2", ingress_policy: "ACCESS-INGRESS"},
+			{interface: "eth2", egress_policy: "CORE-EGRESS"},
 		]
-	}
-
-	// --- G.8032 ERPS ring: RPL neighbor ---
-	erps_config: {
-		rings: [{
-			ring_id: 1, ring_name: "ACCESS-RING-1"
-			control_vlan: 4090
-			data_vlans: [100, 200, 300]
-			ring_ports: [
-				{interface: "eth1", port_role: "east"},   // toward PE1
-				{interface: "eth3", port_role: "west"},   // toward agg5
-			]
-			node_role: "rpl-neighbor"
-			wait_to_restore: 5
-			guard_timer: 500
-			revertive: true
-		}]
 	}
 
 	lldp_config: {
 		tx_interval: 30, hold_multiplier: 4
-		interfaces: [{name: "eth1"}, {name: "eth2"}, {name: "eth3"}]
+		interfaces: [{name: "eth1"}, {name: "eth2"}]
 	}
 
-	// --- ACL ---
 	acl_config: {
-		acls: [
-			{
-				name: "INFRASTRUCTURE-PROTECT", type: "ipv4-extended"
-				entries: [
-					{sequence: 10, action: "permit", match: {protocol: "tcp", dst_port: 179}, description: "allow-bgp"},
-					{sequence: 20, action: "permit", match: {protocol: "ospf"}, description: "allow-ospf"},
-					{sequence: 30, action: "permit", match: {protocol: 89}, description: "allow-ospf-proto"},
-					{sequence: 40, action: "permit", match: {protocol: "udp", dst_port: 3784}, description: "allow-bfd-single"},
-					{sequence: 50, action: "permit", match: {protocol: "udp", dst_port: 4784}, description: "allow-bfd-multi"},
-					{sequence: 60, action: "permit", match: {protocol: "icmp"}, description: "allow-icmp"},
-					{sequence: 70, action: "permit", match: {protocol: "udp", dst_port: 646}, description: "allow-ldp"},
-					{sequence: 100, action: "deny", match: {}, description: "deny-all-else", log: true},
-				]
-			},
-		]
+		acls: [{
+			name: "INFRASTRUCTURE-PROTECT", type: "ipv4-extended"
+			entries: [
+				{sequence: 10, action: "permit", match: {protocol: "tcp", dst_port: 179}, description: "allow-bgp"},
+				{sequence: 20, action: "permit", match: {protocol: "ospf"}, description: "allow-ospf"},
+				{sequence: 30, action: "permit", match: {protocol: 89}, description: "allow-ospf-proto"},
+				{sequence: 40, action: "permit", match: {protocol: "udp", dst_port: 3784}, description: "allow-bfd-single"},
+				{sequence: 50, action: "permit", match: {protocol: "udp", dst_port: 4784}, description: "allow-bfd-multi"},
+				{sequence: 60, action: "permit", match: {protocol: "icmp"}, description: "allow-icmp"},
+				{sequence: 70, action: "permit", match: {protocol: "udp", dst_port: 646}, description: "allow-ldp"},
+				{sequence: 100, action: "deny", match: {}, description: "deny-all-else", log: true},
+			]
+		}]
 	}
 
-	// --- CoPP ---
 	copp_config: {
 		policy: {
 			name: "COPP-STANDARD"
@@ -158,7 +138,6 @@ agg1: device.#Device & {
 		}
 	}
 
-	// --- NTP ---
 	ntp_config: {
 		servers: [
 			{address: "10.100.0.200", prefer: true, iburst: true, key_id: 1, vrf: "MGMT"},
@@ -168,15 +147,12 @@ agg1: device.#Device & {
 		source_interface: "lo0"
 	}
 
-	// --- Management VRF ---
-	mgmt_vrf: {interface: "mgmt0", ipv4: "10.100.0.10/24", gateway: "10.100.0.254"}
+	mgmt_vrf: {interface: "mgmt0", ipv4: "10.100.0.16/24", gateway: "10.100.0.254"}
 
-	// 802.1ad: NNI toward PE1, S-UNI toward CE2
 	dot1ad_config: {
 		interfaces: [
 			{interface: "eth1", port_mode: "NNI", svlan: {svlan_id: 300}},
-			{interface: "eth2", port_mode: "S-UNI", svlan: {svlan_id: 300}, cvlan_range: [10, 20]},
-			{interface: "eth3", port_mode: "NNI", svlan: {svlan_id: 300}},
+			{interface: "eth2", port_mode: "NNI", svlan: {svlan_id: 300}},
 		]
 	}
 }

@@ -1,7 +1,7 @@
 package topology
 
 // Service provider backbone topology — expanded
-// 2x PE, 4x P, 2x RR, 2x ASBR, 2x AGG, 2x CE, 1x PCE, 1x EXTERNAL = 16 devices
+// 2x PE, 4x P, 2x RR, 2x ASBR, 3x AGG, 2x CE, 1x PCE, 1x EXTERNAL = 17 devices
 
 #Link: {
 	a_end: {device: string, interface: string}
@@ -10,7 +10,7 @@ package topology
 	metric?: int
 }
 
-devices: ["pe1", "pe2", "p1", "p2", "p3", "p4", "rr1", "rr2", "asbr1", "asbr2", "agg1", "agg2", "ce2", "ce3", "pce1", "isp-upstream"]
+devices: ["pe1", "pe2", "p1", "p2", "p3", "p4", "rr1", "rr2", "asbr1", "asbr2", "agg1", "agg2", "agg5", "ce2", "ce3", "pce1", "isp-upstream"]
 
 device_roles: {
 	pe1:            "PE"
@@ -25,6 +25,7 @@ device_roles: {
 	asbr2:          "ASBR"
 	agg1:           "AGG"
 	agg2:           "AGG"
+	agg5:           "AGG"
 	ce2:            "CE"
 	ce3:            "CE"
 	pce1:           "PCE"
@@ -60,7 +61,13 @@ links: [
 	{a_end: {device: "asbr2", interface: "eth3"}, z_end: {device: "isp-upstream", interface: "eth2"}, type: "peering"},
 
 	// === PE to AGG (aggregation layer) ===
+	// G.8032 ring: PE1(eth6) → AGG1(eth1) — ring east
 	{a_end: {device: "pe1", interface: "eth6"}, z_end: {device: "agg1", interface: "eth1"}, type: "edge"},
+	// G.8032 ring: AGG1(eth3) → AGG5(eth1) — ring segment
+	{a_end: {device: "agg1", interface: "eth3"}, z_end: {device: "agg5", interface: "eth1"}, type: "edge"},
+	// G.8032 ring: AGG5(eth2) → PE1(eth5) — ring west (RPL)
+	{a_end: {device: "agg5", interface: "eth2"}, z_end: {device: "pe1", interface: "eth5"}, type: "edge"},
+	// PE2 to AGG2 (standalone)
 	{a_end: {device: "pe2", interface: "eth6"}, z_end: {device: "agg2", interface: "eth1"}, type: "edge"},
 	// === Customer-facing: single-homed via AGG ===
 	{a_end: {device: "agg1", interface: "eth2"}, z_end: {device: "ce2", interface: "eth1"}, type: "customer"},

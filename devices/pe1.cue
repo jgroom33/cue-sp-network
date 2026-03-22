@@ -15,7 +15,8 @@ pe1: device.#Device & {
 		{name: "eth3", type: "physical", description: "customer-a-facing"},
 		{name: "eth3.100", type: "subinterface", description: "customer-a-l3vpn"},
 		{name: "eth4", type: "physical", description: "customer-a-l2vpn-pw"},
-		{name: "eth6", type: "physical", ipv4: "10.1.0.20/31", description: "to-agg1"},
+		{name: "eth5", type: "physical", ipv4: "10.1.0.34/31", description: "to-agg5-ring-west"},
+		{name: "eth6", type: "physical", ipv4: "10.1.0.20/31", description: "to-agg1-ring-east"},
 	]
 
 	// --- IS-IS ---
@@ -27,7 +28,8 @@ pe1: device.#Device & {
 			{name: "lo0", passive: true},
 			{name: "eth1", metric: 10},
 			{name: "eth2", metric: 50},  // backup path to p3
-			{name: "eth6", metric: 15},
+			{name: "eth5", metric: 15},  // ring west to agg5
+			{name: "eth6", metric: 15},  // ring east to agg1
 		]
 	}
 
@@ -39,6 +41,7 @@ pe1: device.#Device & {
 		adj_sids: [
 			{label: 15001, interface: "eth1", neighbor: "10.1.0.1"},
 			{label: 15002, interface: "eth2", neighbor: "10.1.0.3"},  // p3:eth5
+			{label: 15003, interface: "eth5", neighbor: "10.1.0.35"},
 			{label: 15004, interface: "eth6", neighbor: "10.1.0.21"},
 		]
 	}
@@ -49,6 +52,7 @@ pe1: device.#Device & {
 		interfaces: [
 			{name: "eth1", protection: "node-link"},
 			{name: "eth2", protection: "node-link"},
+			{name: "eth5", protection: "link"},
 			{name: "eth6", protection: "link"},
 		]
 		srlgs: [
@@ -67,6 +71,7 @@ pe1: device.#Device & {
 		sessions: [
 			{interface: "eth1", profile: "isis-fast"},
 			{interface: "eth2", profile: "isis-fast"},
+			{interface: "eth5", profile: "isis-fast"},
 			{interface: "eth6", profile: "isis-fast"},
 			{remote: "10.0.0.5", multihop: true, profile: "bgp-multihop"},
 			{remote: "10.0.0.6", multihop: true, profile: "bgp-multihop"},
@@ -164,6 +169,7 @@ pe1: device.#Device & {
 			{interface: "eth1", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
 			{interface: "eth2", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
 			{interface: "eth3", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
+			{interface: "eth5", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
 			{interface: "eth6", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
 		]
 	}
@@ -173,7 +179,7 @@ pe1: device.#Device & {
 		tx_interval: 30, hold_multiplier: 4
 		interfaces: [
 			{name: "eth1"}, {name: "eth2"}, {name: "eth3"},
-			{name: "eth4"}, {name: "eth6"},
+			{name: "eth4"}, {name: "eth5"}, {name: "eth6"},
 		]
 	}
 
@@ -204,10 +210,29 @@ pe1: device.#Device & {
 		}]
 	}
 
+	// --- G.8032 ERPS ring: RPL owner — PE1 is the ring interconnection node ---
+	erps_config: {
+		rings: [{
+			ring_id: 1, ring_name: "ACCESS-RING-1"
+			control_vlan: 4090
+			data_vlans: [100, 200, 300]
+			ring_ports: [
+				{interface: "eth6", port_role: "east"},    // toward agg1
+				{interface: "eth5", port_role: "west", admin_state: "blocked"},  // toward agg5 (RPL)
+			]
+			node_role: "rpl-owner"
+			rpl_port: {port: "west", role: "owner"}
+			wait_to_restore: 5
+			guard_timer: 500
+			revertive: true
+		}]
+	}
+
 	// --- 802.1ad ---
 	dot1ad_config: {
 		interfaces: [
 			{interface: "eth3", port_mode: "S-UNI", svlan: {svlan_id: 100}, cvlan_range: [10, 20, 30]},
+			{interface: "eth5", port_mode: "NNI", svlan: {svlan_id: 300}},
 			{interface: "eth6", port_mode: "NNI", svlan: {svlan_id: 300}},
 		]
 	}

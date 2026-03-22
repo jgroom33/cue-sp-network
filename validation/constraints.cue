@@ -20,6 +20,7 @@ _all_devices: {
 	asbr2:        devices.asbr2
 	agg1:         devices.agg1
 	agg2:         devices.agg2
+	agg5:         devices.agg5
 	pce1:         devices.pce1
 	isp_upstream: devices.isp_upstream
 	ce2:          devices.ce2
@@ -40,6 +41,7 @@ _provider_devices: {
 	asbr2: devices.asbr2
 	agg1:  devices.agg1
 	agg2:  devices.agg2
+	agg5:  devices.agg5
 	pce1:  devices.pce1
 }
 
