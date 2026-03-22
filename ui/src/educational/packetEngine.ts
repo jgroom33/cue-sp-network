@@ -723,7 +723,7 @@ function computeBGPRR(
 }
 
 /**
- * Internet Transit: ce1 → pe1 → p1 → p3 → asbr1 → isp-upstream
+ * Internet Transit: ce2 → agg1 → pe1 → p1 → p3 → asbr1 → isp-upstream
  */
 function computeInternet(
   scenario: ScenarioDefinition,

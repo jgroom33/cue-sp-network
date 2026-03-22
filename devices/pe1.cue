@@ -15,7 +15,6 @@ pe1: device.#Device & {
 		{name: "eth3", type: "physical", description: "customer-a-facing"},
 		{name: "eth3.100", type: "subinterface", description: "customer-a-l3vpn"},
 		{name: "eth4", type: "physical", description: "customer-a-l2vpn-pw"},
-		{name: "eth5", type: "physical", ipv4: "10.1.0.28/31", description: "to-agg3"},
 		{name: "eth6", type: "physical", ipv4: "10.1.0.20/31", description: "to-agg1"},
 	]
 
@@ -28,7 +27,6 @@ pe1: device.#Device & {
 			{name: "lo0", passive: true},
 			{name: "eth1", metric: 10},
 			{name: "eth2", metric: 50},  // backup path to p3
-			{name: "eth5", metric: 15},
 			{name: "eth6", metric: 15},
 		]
 	}
@@ -41,7 +39,6 @@ pe1: device.#Device & {
 		adj_sids: [
 			{label: 15001, interface: "eth1", neighbor: "10.1.0.1"},
 			{label: 15002, interface: "eth2", neighbor: "10.1.0.3"},  // p3:eth5
-			{label: 15003, interface: "eth5", neighbor: "10.1.0.29"},
 			{label: 15004, interface: "eth6", neighbor: "10.1.0.21"},
 		]
 	}
@@ -52,7 +49,6 @@ pe1: device.#Device & {
 		interfaces: [
 			{name: "eth1", protection: "node-link"},
 			{name: "eth2", protection: "node-link"},
-			{name: "eth5", protection: "link"},
 			{name: "eth6", protection: "link"},
 		]
 		srlgs: [
@@ -71,7 +67,6 @@ pe1: device.#Device & {
 		sessions: [
 			{interface: "eth1", profile: "isis-fast"},
 			{interface: "eth2", profile: "isis-fast"},
-			{interface: "eth5", profile: "isis-fast"},
 			{interface: "eth6", profile: "isis-fast"},
 			{remote: "10.0.0.5", multihop: true, profile: "bgp-multihop"},
 			{remote: "10.0.0.6", multihop: true, profile: "bgp-multihop"},
@@ -169,7 +164,6 @@ pe1: device.#Device & {
 			{interface: "eth1", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
 			{interface: "eth2", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
 			{interface: "eth3", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
-			{interface: "eth5", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
 			{interface: "eth6", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"},
 		]
 	}
@@ -179,7 +173,7 @@ pe1: device.#Device & {
 		tx_interval: 30, hold_multiplier: 4
 		interfaces: [
 			{name: "eth1"}, {name: "eth2"}, {name: "eth3"},
-			{name: "eth4"}, {name: "eth5"}, {name: "eth6"},
+			{name: "eth4"}, {name: "eth6"},
 		]
 	}
 
@@ -325,18 +319,6 @@ pe1: device.#Device & {
 	// --- CE Handoff --- (PE side, via aggregation layer)
 	handoff_config: {
 		handoffs: [
-			{
-				name: "pe1-to-ce1-via-agg3", side: "pe", interface: "eth5"
-				service_type: "l3vpn", routing_protocol: "static", encapsulation: "untagged"
-				static_routing: {
-					routes: [{prefix: "10.2.3.0/31", next_hop: "10.1.0.29", description: "ce1-via-agg3"}]
-				}
-				untagged_encap: {}
-				qos: {
-					l3_qos: {interface: "eth5", ingress_policy: "SP-INGRESS", egress_policy: "SP-EGRESS"}
-				}
-				vrf: "CUSTOMER-A"
-			},
 			{
 				name: "pe1-to-ce2-via-agg1", side: "pe", interface: "eth6"
 				service_type: "l3vpn", routing_protocol: "static", encapsulation: "dot1q"

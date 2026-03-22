@@ -51,15 +51,12 @@ const fixedPositions: Record<string, { x: number; y: number }> = {
   // PEs — below P core, left/right aligned
   pe1:            { x: 0.25, y: 0.64 },
   pe2:            { x: 0.75, y: 0.64 },
-  // AGGs — below PEs, fanned out
-  agg1:           { x: 0.12, y: 0.78 },
-  agg3:           { x: 0.32, y: 0.78 },
-  agg4:           { x: 0.68, y: 0.78 },
-  agg2:           { x: 0.88, y: 0.78 },
+  // AGGs — below PEs
+  agg1:           { x: 0.25, y: 0.78 },
+  agg2:           { x: 0.75, y: 0.78 },
   // CEs — bottom tier
-  ce2:            { x: 0.18, y: 0.92 },
-  ce1:            { x: 0.50, y: 0.92 },
-  ce3:            { x: 0.82, y: 0.92 },
+  ce2:            { x: 0.25, y: 0.92 },
+  ce3:            { x: 0.75, y: 0.92 },
 };
 
 // Fallback positions by role (for any device not in the map above)

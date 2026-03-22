@@ -20,11 +20,8 @@ _all_devices: {
 	asbr2:        devices.asbr2
 	agg1:         devices.agg1
 	agg2:         devices.agg2
-	agg3:         devices.agg3
-	agg4:         devices.agg4
 	pce1:         devices.pce1
 	isp_upstream: devices.isp_upstream
-	ce1:          devices.ce1
 	ce2:          devices.ce2
 	ce3:          devices.ce3
 }
@@ -43,8 +40,6 @@ _provider_devices: {
 	asbr2: devices.asbr2
 	agg1:  devices.agg1
 	agg2:  devices.agg2
-	agg3:  devices.agg3
-	agg4:  devices.agg4
 	pce1:  devices.pce1
 }
 
@@ -115,20 +110,10 @@ _sbfd_uniqueness: {
 	}
 }
 
-// 8. CE1 dual-home handoff consistency: PE1 and PE2 handoffs to CE1 (via AGGs) must agree
-_ce1_handoff_consistency: {
-	_pe1_h: devices.pe1.handoff_config.handoffs[0]
-	_pe2_h: devices.pe2.handoff_config.handoffs[0]
-	// Service type, encapsulation, and VRF must match
-	_svc_match:   _pe1_h.service_type & _pe2_h.service_type
-	_encap_match: _pe1_h.encapsulation & _pe2_h.encapsulation
-	_vrf_match:   _pe1_h.vrf & _pe2_h.vrf
-}
-
-// 11. OSPF router-ID uniqueness across all OSPF-speaking devices
+// 8. OSPF router-ID uniqueness across all OSPF-speaking devices
 _ospf_router_id_uniqueness: {
 	(devices.ce3.ospf_config.router_id):                                          "ce3"
-	(devices.pe2.handoff_config.handoffs[1].ospf_routing.config.router_id): "pe2"
+	(devices.pe2.handoff_config.handoffs[0].ospf_routing.config.router_id): "pe2"
 }
 
 // 12. ASBR redundancy: both ASBRs must have eBGP to upstream

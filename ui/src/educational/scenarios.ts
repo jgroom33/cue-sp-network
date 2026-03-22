@@ -120,7 +120,7 @@ export const scenarios: ScenarioDefinition[] = [
       "Transit routing",
     ],
     initialDscp: "be",
-    sourceDevice: "ce1",
+    sourceDevice: "ce2",
     destDevice: "isp-upstream",
     overlayType: "internet",
   },
