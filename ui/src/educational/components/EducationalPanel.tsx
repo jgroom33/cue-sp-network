@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Topology, Device } from "../../types";
 import type { EducationalState, EducationalAction, ScenarioDefinition } from "../types";
 import { computeScenario } from "../packetEngine";
@@ -9,6 +9,7 @@ import { PacketInspector } from "./PacketInspector";
 import { HeaderStackDiagram } from "./HeaderStackDiagram";
 import { QoSPipelineView } from "./QoSPipelineView";
 import { WhatIfControls } from "./WhatIfControls";
+import { KeyboardHelp } from "./KeyboardHelp";
 
 interface Props {
   topo: Topology;
@@ -19,6 +20,7 @@ interface Props {
 
 export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
   const { activeScenario, animation, whatIf, showQoS } = state;
+  const [showHelp, setShowHelp] = useState<boolean>(false);
 
   const handleSelectScenario = useCallback(
     (scenarioDef: ScenarioDefinition) => {
@@ -93,14 +95,21 @@ export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
           }
           break;
         case "Escape":
-          dispatch({ type: "SET_SCENARIO", scenario: null });
+          if (showHelp) {
+            setShowHelp(false);
+          } else {
+            dispatch({ type: "SET_SCENARIO", scenario: null });
+          }
+          break;
+        case "?":
+          setShowHelp((prev) => !prev);
           break;
       }
     };
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [activeScenario, animation.playing, animation.speed, dispatch]);
+  }, [activeScenario, animation.playing, animation.speed, dispatch, showHelp]);
 
   // No scenario selected — show selector
   if (!activeScenario) {
@@ -166,6 +175,13 @@ export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
           >
             Overlay
           </button>
+          <button
+            onClick={() => setShowHelp((prev) => !prev)}
+            className="text-[10px] px-1.5 py-0.5 rounded transition-colors text-gray-500 hover:text-gray-300"
+            title="Keyboard shortcuts (?)"
+          >
+            ?
+          </button>
         </div>
       </div>
 
@@ -225,7 +241,11 @@ export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
         <span>←→: step</span>
         <span>+−: speed</span>
         <span>Esc: back</span>
+        <span>?: help</span>
       </div>
+
+      {/* Keyboard shortcut help modal */}
+      <KeyboardHelp open={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 }

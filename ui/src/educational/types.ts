@@ -73,7 +73,7 @@ export interface ScenarioDefinition {
   shortName: string;
   description: string;
   category: "l3vpn" | "l2vpn" | "mef" | "vxlan" | "sr-te" | "bgp" | "tilfa" | "internet";
-  group: "sp-core" | "data-center" | "mef-services";
+  group: "sp-core" | "data-center" | "mef-services" | "getting-started";
   icon: string;
   color: string;
   concepts: string[];

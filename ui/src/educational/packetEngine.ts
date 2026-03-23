@@ -183,6 +183,8 @@ function computePacketStates(
   configs: Record<string, Device>
 ): PacketState[] {
   switch (scenario.id) {
+    case "simple-ip-forwarding":
+      return computeSimpleIP(scenario, pathResult, topo, configs);
     case "l3vpn-ce-to-ce":
       return computeL3VPN(scenario, pathResult, topo, configs);
     case "l2vpn-pseudowire":
@@ -210,6 +212,97 @@ function computePacketStates(
 
 function deepCloneHeaders(h: PacketHeaders): PacketHeaders {
   return JSON.parse(JSON.stringify(h));
+}
+
+/**
+ * Simple IP Forwarding: no MPLS, just hop-by-hop IP forwarding with TTL decrement and MAC rewrite.
+ */
+function computeSimpleIP(
+  scenario: ScenarioDefinition,
+  pathResult: PathResult,
+  topo: Topology,
+  _configs: Record<string, Device>
+): PacketState[] {
+  const { path, interfaces } = pathResult;
+  const states: PacketState[] = [];
+  const dscp = scenario.initialDscp ?? "be";
+
+  const srcLoopback = getLoopback(topo, path[0]);
+  const dstLoopback = getLoopback(topo, path[path.length - 1]);
+
+  let currentHeaders: PacketHeaders = {
+    ethernet: {
+      srcMac: `00:${path[0].slice(0, 2)}:00:00:00:01`,
+      dstMac: `00:${path[1]?.slice(0, 2) ?? "xx"}:00:00:00:01`,
+      etherType: "0x0800",
+    },
+    ip: {
+      src: srcLoopback,
+      dst: dstLoopback,
+      ttl: 64,
+      dscp,
+      protocol: "TCP",
+    },
+  };
+
+  for (let i = 0; i < path.length; i++) {
+    const dev = path[i];
+    const iface = interfaces[i];
+    const actions: PacketAction[] = [];
+    const headers = deepCloneHeaders(currentHeaders);
+    let annotation = "";
+
+    if (i === 0) {
+      actions.push({ type: "ip-lookup", result: `Route to ${headers.ip!.dst} via next hop` });
+      annotation =
+        "The source device looks up the destination IP address in its routing table. " +
+        "The routing table says the next hop is reachable via the directly connected interface. " +
+        "The device builds an Ethernet frame with its own MAC as source and the next-hop's MAC as destination, " +
+        "then places the IP packet inside. This is Layer 3 (IP) riding on top of Layer 2 (Ethernet).";
+    } else if (i === path.length - 1) {
+      actions.push({ type: "ip-lookup", result: "Destination reached — deliver locally" });
+      annotation =
+        "The packet has arrived at its destination. Notice that throughout the journey: " +
+        "(1) the IP source and destination addresses never changed — they identify the endpoints, " +
+        "(2) the Ethernet MAC addresses changed at every hop — they identify the current and next device, " +
+        "(3) the TTL decreased at each hop — preventing infinite loops. " +
+        "This is the foundation of IP networking. More advanced scenarios add MPLS labels on top of this basic forwarding.";
+    } else {
+      // Intermediate hop: IP forward
+      if (headers.ip) {
+        const oldTtl = headers.ip.ttl;
+        headers.ip.ttl = oldTtl - 1;
+        actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
+      }
+      actions.push({ type: "ip-lookup", result: `Route to ${headers.ip!.dst} → forward to ${path[i + 1]}` });
+      actions.push({ type: "forward", outInterface: iface.egress });
+
+      headers.ethernet!.srcMac = `00:${dev.slice(0, 2)}:00:00:00:01`;
+      headers.ethernet!.dstMac = `00:${path[i + 1]?.slice(0, 2) ?? "xx"}:00:00:00:01`;
+
+      annotation =
+        `Router ${dev} receives the packet on ${iface.ingress || "its interface"}. It: ` +
+        `(1) strips the Ethernet header (Layer 2 is hop-by-hop), ` +
+        `(2) decrements the TTL from ${(headers.ip?.ttl ?? 0) + 1} to ${headers.ip?.ttl ?? 0} (each router subtracts 1 to prevent loops), ` +
+        `(3) looks up ${headers.ip?.dst} in its routing table to find the next hop, ` +
+        `(4) builds a new Ethernet header with its own MAC as source and ${path[i + 1]}'s MAC as destination, ` +
+        `then sends the packet out ${iface.egress || "the outgoing interface"}. The IP header stays the same (except TTL) — only the Ethernet header changes per hop.`;
+    }
+
+    states.push({
+      hop: i,
+      device: dev,
+      ingressInterface: iface.ingress,
+      egressInterface: iface.egress,
+      headers,
+      actions,
+      annotation,
+    });
+
+    currentHeaders = deepCloneHeaders(headers);
+  }
+
+  return states;
 }
 
 /**

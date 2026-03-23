@@ -2,6 +2,31 @@ import type { ScenarioDefinition } from "./types";
 
 export const scenarios: ScenarioDefinition[] = [
   // ═══════════════════════════════════════
+  // Getting Started
+  // ═══════════════════════════════════════
+  {
+    id: "simple-ip-forwarding",
+    name: "Simple IP Forwarding",
+    shortName: "IP Fwd",
+    description:
+      "A basic IP packet travels from a customer device through the aggregation layer to the PE router. No MPLS labels, no overlays — just hop-by-hop IP forwarding with TTL decrement and MAC rewrite at each hop. Start here to understand the fundamentals.",
+    category: "l3vpn", // reuse l3vpn category for styling
+    group: "getting-started",
+    icon: "📡",
+    color: "#22c55e",
+    concepts: [
+      "IP forwarding (hop-by-hop)",
+      "TTL decrement",
+      "MAC address rewrite",
+      "Routing table lookup",
+      "Layer 2 vs Layer 3",
+    ],
+    initialDscp: "be",
+    sourceDevice: "ce2",
+    destDevice: "pe1",
+  },
+
+  // ═══════════════════════════════════════
   // SP Core
   // ═══════════════════════════════════════
   {
@@ -275,6 +300,7 @@ export const scenarios: ScenarioDefinition[] = [
 ];
 
 export const scenarioGroups: { id: string; label: string }[] = [
+  { id: "getting-started", label: "Getting Started" },
   { id: "sp-core", label: "SP Core" },
   { id: "data-center", label: "Data Center" },
   { id: "mef-services", label: "MEF Services" },

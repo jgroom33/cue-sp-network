@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.1] - 2026-03-23
+
+### Educational onboarding
+
+- **"Simple IP Forwarding" scenario** — new beginner-friendly scenario in a "Getting Started" group, shown first in the scenario selector. Demonstrates pure hop-by-hop IP forwarding (CE2 → AGG1 → PE1) with no MPLS, explaining TTL decrement, MAC rewrite, and L2-vs-L3 fundamentals at each hop
+- **Keyboard shortcut help modal** — press `?` or click the `?` button in the panel header to see all shortcuts. Closes on `?`, Escape, or clicking the backdrop
+
+### Testing & documentation
+
+- **Root README** — project overview, architecture diagram, quick start, project structure, scenario table, keyboard shortcuts, and tech stack
+- **Unit tests** — added Vitest with 23 tests across two suites:
+  - `pathfinding.test.ts`: Dijkstra shortest path, adjacency graph construction, disabled links, backup path computation
+  - `clouds.test.ts`: convex hull (Graham scan), cloud SVG path generation, label positioning
+
 ## [0.5.0] - 2026-03-23
 
 ### Educational mode promoted to primary view
