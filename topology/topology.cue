@@ -1,7 +1,7 @@
 package topology
 
 // Service provider backbone topology — expanded
-// 2x PE, 4x P, 2x RR, 2x ASBR, 3x AGG, 2x CE, 1x PCE, 1x EXTERNAL = 17 devices
+// 2x PE, 4x P, 2x RR, 2x ASBR, 3x AGG, 4x CE, 1x PCE, 1x EXTERNAL = 19 devices
 
 #Link: {
 	a_end: {device: string, interface: string}
@@ -10,7 +10,7 @@ package topology
 	metric?: int
 }
 
-devices: ["pe1", "pe2", "p1", "p2", "p3", "p4", "rr1", "rr2", "asbr1", "asbr2", "agg1", "agg2", "agg5", "ce2", "ce3", "pce1", "isp-upstream"]
+devices: ["pe1", "pe2", "p1", "p2", "p3", "p4", "rr1", "rr2", "asbr1", "asbr2", "agg1", "agg2", "agg5", "ce1", "ce2", "ce3", "ce4", "pce1", "isp-upstream"]
 
 device_roles: {
 	pe1:            "PE"
@@ -26,8 +26,10 @@ device_roles: {
 	agg1:           "AGG"
 	agg2:           "AGG"
 	agg5:           "AGG"
+	ce1:            "CE"
 	ce2:            "CE"
 	ce3:            "CE"
+	ce4:            "CE"
 	pce1:           "PCE"
 	"isp-upstream": "EXTERNAL"
 }
@@ -73,7 +75,11 @@ links: [
 	{a_end: {device: "agg1", interface: "eth2"}, z_end: {device: "ce2", interface: "eth1"}, type: "customer"},
 	{a_end: {device: "agg2", interface: "eth2"}, z_end: {device: "ce3", interface: "eth1"}, type: "customer"},
 
-	// === PE customer services (802.1ad, L2VPN) ===
+	// === L2VPN pseudowire attachment circuits ===
+	{a_end: {device: "pe1", interface: "eth4"}, z_end: {device: "ce1", interface: "eth1"}, type: "customer"},
+	{a_end: {device: "pe2", interface: "eth4"}, z_end: {device: "ce4", interface: "eth1"}, type: "customer"},
+
+	// === PE customer services (802.1ad) ===
 	{a_end: {device: "pe1", interface: "eth3"}, z_end: {device: "customer-a", interface: "eth0"}, type: "customer"},
 	{a_end: {device: "pe2", interface: "eth3"}, z_end: {device: "customer-b", interface: "eth0"}, type: "customer"},
 ]

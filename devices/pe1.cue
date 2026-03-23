@@ -14,7 +14,7 @@ pe1: device.#Device & {
 		{name: "eth2", type: "physical", ipv4: "10.1.0.2/31", description: "to-p3"},
 		{name: "eth3", type: "physical", description: "customer-a-facing"},
 		{name: "eth3.100", type: "subinterface", description: "customer-a-l3vpn"},
-		{name: "eth4", type: "physical", description: "customer-a-l2vpn-pw"},
+		{name: "eth4", type: "physical", ipv4: "10.2.5.0/31", description: "to-ce1-l2vpn-pw"},
 		{name: "eth5", type: "physical", ipv4: "10.1.0.34/31", description: "to-agg5-ring-west"},
 		{name: "eth6", type: "physical", ipv4: "10.1.0.20/31", description: "to-agg1-ring-east"},
 	]

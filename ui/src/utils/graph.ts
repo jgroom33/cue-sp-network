@@ -55,9 +55,11 @@ const fixedPositions: Record<string, { x: number; y: number }> = {
   agg1:           { x: 0.32, y: 0.78 },
   agg5:           { x: 0.12, y: 0.72 },
   agg2:           { x: 0.75, y: 0.78 },
-  // CEs — bottom tier
+  // CEs — bottom tier (ce2/ce3 via AGGs) and L2VPN CEs near PEs
+  ce1:            { x: 0.15, y: 0.64 },
   ce2:            { x: 0.25, y: 0.92 },
   ce3:            { x: 0.75, y: 0.92 },
+  ce4:            { x: 0.85, y: 0.64 },
 };
 
 // Fallback positions by role (for any device not in the map above)

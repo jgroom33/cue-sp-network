@@ -1,6 +1,6 @@
 package network
 
-// Top-level network model — 17 devices, 12+ protocol schemas
+// Top-level network model — 19 devices, 12+ protocol schemas
 
 import (
 	"github.com/jgroom/sp-network-model/topology"
@@ -38,8 +38,10 @@ network: {
 		// External
 		isp_upstream: devices.isp_upstream
 		// Customer Edge
+		ce1: devices.ce1
 		ce2: devices.ce2
 		ce3: devices.ce3
+		ce4: devices.ce4
 	}
 
 	// Global validation (hidden — evaluated for constraint checking only)

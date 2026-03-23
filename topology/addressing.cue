@@ -18,8 +18,10 @@ loopbacks: {
 	asbr2: "10.0.0.12"
 	pce1:  "10.0.0.13"
 	agg5:  "10.0.0.16"
+	ce1:   "192.168.1.1"
 	ce2:   "192.168.2.1"
 	ce3:   "192.168.3.1"
+	ce4:   "192.168.4.1"
 }
 
 // VTEP loopbacks (PE only)
@@ -63,6 +65,8 @@ p2p_subnets: {
 customer_subnets: {
 	"agg1-ce2":       "10.2.1.0/31"
 	"agg2-ce3":       "10.2.2.0/31"
+	"pe1-ce1":        "10.2.5.0/31"
+	"pe2-ce4":        "10.2.6.0/31"
 }
 
 // Management subnet

@@ -38,8 +38,8 @@ export const scenarios: ScenarioDefinition[] = [
       "Transparent L2 transport",
       "VPWS point-to-point service",
     ],
-    sourceDevice: "pe1",
-    destDevice: "pe2",
+    sourceDevice: "ce1",
+    destDevice: "ce4",
     overlayType: "l2vpn",
   },
   {

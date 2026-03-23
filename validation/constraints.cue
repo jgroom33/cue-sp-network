@@ -23,8 +23,10 @@ _all_devices: {
 	agg5:         devices.agg5
 	pce1:         devices.pce1
 	isp_upstream: devices.isp_upstream
+	ce1:          devices.ce1
 	ce2:          devices.ce2
 	ce3:          devices.ce3
+	ce4:          devices.ce4
 }
 
 // Provider devices only (IS-IS + SR domain)

@@ -15,8 +15,10 @@
                 "agg1",
                 "agg2",
                 "agg5",
+                "ce1",
                 "ce2",
                 "ce3",
+                "ce4",
                 "pce1",
                 "isp-upstream"
             ],
@@ -34,8 +36,10 @@
                 "agg1": "AGG",
                 "agg2": "AGG",
                 "agg5": "AGG",
+                "ce1": "CE",
                 "ce2": "CE",
                 "ce3": "CE",
+                "ce4": "CE",
                 "pce1": "PCE",
                 "isp-upstream": "EXTERNAL"
             },
@@ -265,6 +269,28 @@
                 {
                     "a_end": {
                         "device": "pe1",
+                        "interface": "eth4"
+                    },
+                    "z_end": {
+                        "device": "ce1",
+                        "interface": "eth1"
+                    },
+                    "type": "customer"
+                },
+                {
+                    "a_end": {
+                        "device": "pe2",
+                        "interface": "eth4"
+                    },
+                    "z_end": {
+                        "device": "ce4",
+                        "interface": "eth1"
+                    },
+                    "type": "customer"
+                },
+                {
+                    "a_end": {
+                        "device": "pe1",
                         "interface": "eth3"
                     },
                     "z_end": {
@@ -300,8 +326,10 @@
                 "asbr2": "10.0.0.12",
                 "pce1": "10.0.0.13",
                 "agg5": "10.0.0.16",
+                "ce1": "192.168.1.1",
                 "ce2": "192.168.2.1",
-                "ce3": "192.168.3.1"
+                "ce3": "192.168.3.1",
+                "ce4": "192.168.4.1"
             },
             "vtep_loopbacks": {
                 "pe1": "10.0.1.1",
@@ -330,7 +358,9 @@
             },
             "customer_subnets": {
                 "agg1-ce2": "10.2.1.0/31",
-                "agg2-ce3": "10.2.2.0/31"
+                "agg2-ce3": "10.2.2.0/31",
+                "pe1-ce1": "10.2.5.0/31",
+                "pe2-ce4": "10.2.6.0/31"
             },
             "management_subnet": "10.100.0.0/24",
             "sp_asn": 65000,
@@ -391,9 +421,10 @@
                     },
                     {
                         "name": "eth4",
-                        "description": "customer-a-l2vpn-pw",
+                        "description": "to-ce1-l2vpn-pw",
                         "enabled": true,
                         "mtu": 9000,
+                        "ipv4": "10.2.5.0/31",
                         "type": "physical"
                     },
                     {
@@ -1731,9 +1762,10 @@
                     },
                     {
                         "name": "eth4",
-                        "description": "customer-b-l2vpn-pw",
+                        "description": "to-ce4-l2vpn-pw",
                         "enabled": true,
                         "mtu": 9000,
+                        "ipv4": "10.2.6.0/31",
                         "type": "physical"
                     },
                     {
@@ -11043,6 +11075,53 @@
                     "med_policies": []
                 }
             },
+            "ce1": {
+                "hostname": "ce1",
+                "role": "CE",
+                "router_id": "192.168.1.1",
+                "interfaces": [
+                    {
+                        "name": "lo0",
+                        "description": "",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "192.168.1.1/32",
+                        "type": "loopback"
+                    },
+                    {
+                        "name": "eth1",
+                        "description": "to-pe1-l2vpn",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.5.1/31",
+                        "type": "physical"
+                    }
+                ],
+                "lldp_config": {
+                    "enabled": true,
+                    "tx_interval": 30,
+                    "hold_multiplier": 4,
+                    "reinit_delay": 2,
+                    "tx_delay": 2,
+                    "chassis_id_subtype": "mac-address",
+                    "optional_tlvs": [
+                        "system-name",
+                        "system-description",
+                        "system-capabilities",
+                        "port-description",
+                        "management-address"
+                    ],
+                    "interfaces": [
+                        {
+                            "name": "eth1",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        }
+                    ],
+                    "med_policies": []
+                }
+            },
             "ce2": {
                 "hostname": "ce2",
                 "role": "CE",
@@ -11617,6 +11696,53 @@
                             "vrf": "CUSTOMER-C"
                         }
                     ]
+                }
+            },
+            "ce4": {
+                "hostname": "ce4",
+                "role": "CE",
+                "router_id": "192.168.4.1",
+                "interfaces": [
+                    {
+                        "name": "lo0",
+                        "description": "",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "192.168.4.1/32",
+                        "type": "loopback"
+                    },
+                    {
+                        "name": "eth1",
+                        "description": "to-pe2-l2vpn",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.6.1/31",
+                        "type": "physical"
+                    }
+                ],
+                "lldp_config": {
+                    "enabled": true,
+                    "tx_interval": 30,
+                    "hold_multiplier": 4,
+                    "reinit_delay": 2,
+                    "tx_delay": 2,
+                    "chassis_id_subtype": "mac-address",
+                    "optional_tlvs": [
+                        "system-name",
+                        "system-description",
+                        "system-capabilities",
+                        "port-description",
+                        "management-address"
+                    ],
+                    "interfaces": [
+                        {
+                            "name": "eth1",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        }
+                    ],
+                    "med_policies": []
                 }
             }
         }
