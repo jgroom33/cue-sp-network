@@ -52,6 +52,14 @@ export default function App() {
     });
   }, []);
 
+  const scenarioDevices = useMemo(
+    () =>
+      eduState.activeScenario
+        ? new Set(eduState.activeScenario.path)
+        : null,
+    [eduState.activeScenario]
+  );
+
   const overlayData = useMemo(
     () =>
       data ? buildOverlayData(data.network.topo, data.network.device_configs) : null,
@@ -110,7 +118,7 @@ export default function App() {
           onSelectDevice={setSelectedDevice}
           visibleRoles={visibleRoles}
           visibleLinkTypes={visibleLinkTypes}
-          highlightedDevices={null}
+          highlightedDevices={scenarioDevices}
           overlayData={overlayData!}
           activeOverlays={activeOverlays}
           onNodePositionsUpdate={setNodePositions}
