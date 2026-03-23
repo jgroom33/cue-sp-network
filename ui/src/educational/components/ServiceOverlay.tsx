@@ -15,8 +15,8 @@ const overlayStyles: Record<string, { stroke: string; dashArray?: string; label?
   internet: { stroke: "#06b6d4", label: "Internet Path" },
 };
 
-// Roles that belong inside the SP cloud
-const SP_CORE_ROLES = new Set(["PE", "P", "RR", "ASBR", "AGG", "PCE"]);
+// Roles that belong inside the SP cloud (provider-owned devices)
+const SP_CORE_ROLES = new Set(["PE", "P", "RR", "ASBR", "AGG", "NID", "PCE"]);
 
 export function ServiceOverlay({ scenario, nodePositions, visible, deviceRoles }: Props) {
   if (!visible || !scenario.definition.overlayType) return null;
