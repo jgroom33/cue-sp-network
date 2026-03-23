@@ -53,6 +53,12 @@ npm run dev
 
 The dev server starts at `http://localhost:5173`.
 
+**Enable Git hooks** (auto-rebuilds `docs/` on commit when `ui/src/` changes):
+
+```bash
+git config core.hooksPath hooks
+```
+
 **Rebuilding network data** (only if you change CUE definitions):
 
 ```bash
