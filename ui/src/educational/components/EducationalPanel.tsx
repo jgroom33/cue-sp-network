@@ -105,7 +105,7 @@ export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
   // No scenario selected — show selector
   if (!activeScenario) {
     return (
-      <div className="w-96 bg-gray-900 border-l border-gray-700 overflow-y-auto">
+      <div className="w-96 h-full bg-gray-900 border-l border-gray-700 overflow-y-auto">
         <ScenarioSelector onSelect={handleSelectScenario} />
       </div>
     );

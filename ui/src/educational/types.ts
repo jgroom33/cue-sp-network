@@ -69,7 +69,7 @@ export interface ScenarioDefinition {
   name: string;
   shortName: string;
   description: string;
-  category: "l3vpn" | "vxlan" | "sr-te" | "bgp" | "tilfa" | "internet";
+  category: "l3vpn" | "l2vpn" | "vxlan" | "sr-te" | "bgp" | "tilfa" | "internet";
   icon: string;
   color: string;
   concepts: string[];

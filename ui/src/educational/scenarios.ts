@@ -23,6 +23,26 @@ export const scenarios: ScenarioDefinition[] = [
     overlayType: "l3vpn",
   },
   {
+    id: "l2vpn-pseudowire",
+    name: "L2VPN Pseudowire (VPWS)",
+    shortName: "L2VPN",
+    description:
+      "A point-to-point Ethernet pseudowire carries Layer 2 frames transparently between PE1 and PE2. The original Ethernet frame is encapsulated with a PW label (service demux) and a transport label (SR-MPLS forwarding). The control word ensures correct sequencing.",
+    category: "l2vpn",
+    icon: "🔗",
+    color: "#14b8a6",
+    concepts: [
+      "Pseudowire encapsulation",
+      "PW label + Transport label stack",
+      "Control word",
+      "Transparent L2 transport",
+      "VPWS point-to-point service",
+    ],
+    sourceDevice: "pe1",
+    destDevice: "pe2",
+    overlayType: "l2vpn",
+  },
+  {
     id: "vxlan-ingress-replication",
     name: "VXLAN Ingress Replication",
     shortName: "VXLAN",

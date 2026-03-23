@@ -185,6 +185,8 @@ function computePacketStates(
   switch (scenario.id) {
     case "l3vpn-ce-to-ce":
       return computeL3VPN(scenario, pathResult, topo, configs);
+    case "l2vpn-pseudowire":
+      return computeL2VPN(scenario, pathResult, topo, configs);
     case "vxlan-ingress-replication":
       return computeVXLAN(scenario, pathResult, topo, configs);
     case "sr-te-low-latency":
@@ -404,6 +406,144 @@ function computeL3VPN(
       actions,
       qosClass: qosInfo?.fwdClass,
       qosAction: "transmit",
+      annotation,
+    });
+
+    currentHeaders = deepCloneHeaders(headers);
+  }
+
+  return states;
+}
+
+/**
+ * L2VPN Pseudowire (VPWS): pe1 → P core → pe2
+ * Transparent L2 frame transport with PW label + transport label
+ */
+function computeL2VPN(
+  _scenario: ScenarioDefinition,
+  pathResult: PathResult,
+  topo: Topology,
+  configs: Record<string, Device>
+): PacketState[] {
+  const { path, interfaces } = pathResult;
+  const states: PacketState[] = [];
+
+  // Look up PW config from source PE
+  const srcKey = path[0].replace(/-/g, "_");
+  const srcConfig = configs[srcKey] ?? configs[path[0]];
+  const vpws = srcConfig?.l2vpn_config?.vpws?.[0];
+  const pwId = vpws?.pseudowire?.pw_id ?? 1001;
+  const hasControlWord = vpws?.pseudowire?.control_word ?? true;
+
+  // Find ingress/egress PE indices
+  const ingressPeIdx = path.findIndex(
+    (d) => topo.device_roles?.[d] === "PE"
+  );
+  const egressPeIdx = findLastIndex(
+    path,
+    (d) => topo.device_roles?.[d] === "PE"
+  );
+  const egressPe = path[egressPeIdx];
+  const transportLabel = getNodeSidLabel(configs, egressPe);
+
+  // PW label — use pw_id as synthetic label (educational approximation)
+  const pwLabel = pwId;
+
+  let currentHeaders: PacketHeaders = {
+    ethernet: {
+      srcMac: "00:cu:st:aa:00:01",
+      dstMac: "00:cu:st:bb:00:01",
+      etherType: "0x0800",
+    },
+    ip: {
+      src: "172.16.1.10",
+      dst: "172.16.1.20",
+      ttl: 64,
+      dscp: "be",
+      protocol: "TCP",
+    },
+  };
+
+  for (let i = 0; i < path.length; i++) {
+    const dev = path[i];
+    const role = topo.device_roles?.[dev] ?? "PE";
+    const iface = interfaces[i];
+    const actions: PacketAction[] = [];
+    const headers = deepCloneHeaders(currentHeaders);
+    let annotation = "";
+
+    if (role === "PE" && i === ingressPeIdx) {
+      // Ingress PE: push PW label + transport label
+      const pwMpls: MplsLabel = {
+        value: pwLabel,
+        ttl: 255,
+        tc: 0,
+        bottom: true,
+        purpose: `PW Label (Pseudowire ID ${pwId})`,
+      };
+      const transportMpls: MplsLabel = {
+        value: transportLabel,
+        ttl: 63,
+        tc: 0,
+        bottom: false,
+        purpose: `Transport (Node SID ${transportLabel} → ${egressPe})`,
+      };
+
+      actions.push({ type: "mpls-push", label: pwMpls });
+      actions.push({ type: "mpls-push", label: transportMpls });
+
+      headers.mpls = [transportMpls, pwMpls];
+      headers.pseudowire = { pwLabel, controlWord: hasControlWord };
+      headers.ethernet!.etherType = "0x8847";
+
+      annotation =
+        `Ingress PE (${dev}) receives the customer Ethernet frame on interface ${iface.ingress || "eth4"} and encapsulates it for pseudowire transport. A two-label stack is pushed: transport label ${transportLabel} (routes to ${egressPe} via SR-MPLS) and PW label ${pwLabel} (identifies this pseudowire service). ${hasControlWord ? "A control word is inserted between the PW label and the payload for sequencing and padding." : ""} The original L2 frame is carried transparently — the customer IP addresses are never examined.`;
+    } else if (role === "P") {
+      // P router: MPLS swap
+      const isPenultimateHop = i === egressPeIdx - 1;
+
+      if (isPenultimateHop && headers.mpls?.length) {
+        actions.push({ type: "php-pop", label: headers.mpls[0].value });
+        if (headers.mpls.length > 1) {
+          headers.mpls = [{ ...headers.mpls[1], bottom: true }];
+        }
+        annotation =
+          `Penultimate Hop Popping (PHP): P router ${dev} pops the transport label, exposing the PW label ${pwLabel}. The egress PE will use the PW label to identify which pseudowire this frame belongs to.`;
+      } else if (headers.mpls?.length) {
+        const oldLabel = headers.mpls[0].value;
+        actions.push({ type: "mpls-swap", from: oldLabel, to: transportLabel });
+        headers.mpls[0] = { ...headers.mpls[0], value: transportLabel };
+        const oldTtl = headers.mpls[0].ttl;
+        headers.mpls[0].ttl = oldTtl - 1;
+        actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
+        annotation =
+          `P router ${dev} swaps the transport label. Like L3VPN, the P router has no visibility into the pseudowire — it only processes the top MPLS label. The customer's L2 frame is completely opaque to the core.`;
+      }
+
+      headers.ethernet!.srcMac = `00:${dev}:00:00:00:01`;
+      headers.ethernet!.dstMac = `00:${path[i + 1]}:00:00:00:01`;
+    } else if (role === "PE" && i === egressPeIdx) {
+      // Egress PE: pop PW label, deliver original L2 frame
+      if (headers.mpls?.length) {
+        actions.push({ type: "vpn-label-pop", label: headers.mpls[0].value });
+      }
+      headers.mpls = undefined;
+      headers.pseudowire = undefined;
+      headers.ethernet!.etherType = "0x0800";
+
+      actions.push({ type: "forward", outInterface: "eth4" });
+
+      annotation =
+        `Egress PE (${dev}) pops the PW label ${pwLabel} and delivers the original Ethernet frame out the local attachment circuit (eth4). The frame arrives at the remote customer site exactly as it was sent — MAC addresses, VLAN tags, and payload are all preserved. This is the key value of a pseudowire: transparent L2 transport across an MPLS/IP backbone.`;
+    }
+
+    states.push({
+      hop: i,
+      device: dev,
+      ingressInterface: iface.ingress,
+      egressInterface: iface.egress,
+      headers,
+      actions,
       annotation,
     });
 

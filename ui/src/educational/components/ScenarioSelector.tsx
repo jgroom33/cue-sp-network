@@ -7,6 +7,7 @@ interface Props {
 
 const categoryColors: Record<string, string> = {
   l3vpn: "border-blue-500 bg-blue-500/10 hover:bg-blue-500/20",
+  l2vpn: "border-teal-500 bg-teal-500/10 hover:bg-teal-500/20",
   vxlan: "border-violet-500 bg-violet-500/10 hover:bg-violet-500/20",
   "sr-te": "border-pink-500 bg-pink-500/10 hover:bg-pink-500/20",
   bgp: "border-amber-500 bg-amber-500/10 hover:bg-amber-500/20",
