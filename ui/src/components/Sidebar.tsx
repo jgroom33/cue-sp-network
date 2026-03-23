@@ -1,13 +1,9 @@
-import { useState } from "react";
 import type { Topology, Device, DeviceRole, LinkType, OverlayType } from "../types";
 import { roleColors, linkColors, overlayColors, overlayLabels } from "../utils/colors";
-import { toConfigKey } from "../utils/graph";
 
 interface Props {
   topo: Topology;
   configs: Record<string, Device>;
-  selectedDevice: string | null;
-  onSelectDevice: (id: string | null) => void;
   visibleRoles: Set<DeviceRole>;
   onToggleRole: (role: DeviceRole) => void;
   visibleLinkTypes: Set<LinkType>;
@@ -23,9 +19,6 @@ const CLOUD_OVERLAYS: OverlayType[] = ["cloud-isis", "cloud-bgp", "cloud-vxlan",
 
 export default function Sidebar({
   topo,
-  configs,
-  selectedDevice,
-  onSelectDevice,
   visibleRoles,
   onToggleRole,
   visibleLinkTypes,
@@ -33,29 +26,6 @@ export default function Sidebar({
   activeOverlays,
   onToggleOverlay,
 }: Props) {
-  const [search, setSearch] = useState("");
-
-  // Group devices by role
-  const byRole: Record<string, string[]> = {};
-  for (const dev of topo.devices) {
-    const role = topo.device_roles[dev] || "EXTERNAL";
-    if (!byRole[role]) byRole[role] = [];
-    byRole[role].push(dev);
-  }
-
-  // Filter devices
-  const matchesSearch = (dev: string) => {
-    if (!search) return true;
-    const cfg = configs[toConfigKey(dev)];
-    const q = search.toLowerCase();
-    return (
-      dev.toLowerCase().includes(q) ||
-      cfg?.hostname.toLowerCase().includes(q) ||
-      cfg?.router_id.includes(q) ||
-      (topo.loopbacks[dev] || "").includes(q)
-    );
-  };
-
   return (
     <div className="h-full flex flex-col bg-gray-900 border-r border-gray-700">
       {/* Header */}
@@ -66,18 +36,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Search */}
-      <div className="px-3 py-2">
-        <input
-          type="text"
-          placeholder="Search devices..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-2.5 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gray-500"
-        />
-      </div>
-
-      {/* Scrollable content */}
+      {/* Controls */}
       <div className="flex-1 overflow-y-auto">
         {/* Role filters */}
         <div className="px-3 py-2 border-b border-gray-800">
@@ -193,45 +152,6 @@ export default function Sidebar({
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Device list */}
-        <div className="px-3 py-2">
-          {ALL_ROLES.filter((role) => byRole[role]?.length).map((role) => (
-            <div key={role} className="mb-2">
-              <div
-                className="text-xs font-semibold uppercase tracking-wide mb-1 flex items-center gap-1.5"
-                style={{ color: roleColors[role] }}
-              >
-                <div
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: roleColors[role] }}
-                />
-                {role} ({byRole[role].length})
-              </div>
-              {byRole[role]
-                .filter((dev) => matchesSearch(dev))
-                .map((dev) => {
-                  const cfg = configs[toConfigKey(dev)];
-                  return (
-                    <button
-                      key={dev}
-                      onClick={() => onSelectDevice(dev === selectedDevice ? null : dev)}
-                      className={`w-full text-left px-2 py-1 rounded text-xs transition-colors mb-0.5 ${
-                        dev === selectedDevice
-                          ? "bg-blue-900/50 text-blue-200 border border-blue-700"
-                          : "text-gray-300 hover:bg-gray-800 border border-transparent"
-                      }`}
-                    >
-                      <div className="font-medium">{cfg?.hostname || dev}</div>
-                      <div className="text-gray-500 font-mono text-[10px]">
-                        {topo.loopbacks[dev] || cfg?.router_id || ""}
-                      </div>
-                    </button>
-                  );
-                })}
-            </div>
-          ))}
         </div>
       </div>
     </div>

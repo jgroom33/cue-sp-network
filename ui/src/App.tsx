@@ -92,8 +92,6 @@ export default function App() {
         <Sidebar
           topo={topo}
           configs={device_configs}
-          selectedDevice={selectedDevice}
-          onSelectDevice={setSelectedDevice}
           visibleRoles={visibleRoles}
           onToggleRole={toggleRole}
           visibleLinkTypes={visibleLinkTypes}
