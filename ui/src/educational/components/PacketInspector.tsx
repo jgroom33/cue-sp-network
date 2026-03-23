@@ -125,6 +125,27 @@ function formatAction(action: PacketAction): {
         text: `Push S-VLAN ${action.svlan}`,
         color: "bg-teal-900/30 text-teal-300",
       };
+    case "qinq-pop":
+      return {
+        icon: "↑",
+        text: `Pop S-VLAN ${action.svlan}`,
+        color: "bg-teal-800/30 text-teal-300",
+      };
+    case "mef-police":
+      return {
+        icon: action.result === "conform" ? "✓" : "!",
+        text: `MEF BW Profile: CIR ${action.cir} — ${action.result} → ${action.action}`,
+        color:
+          action.result === "conform"
+            ? "bg-green-900/20 text-green-400"
+            : "bg-yellow-900/20 text-yellow-400",
+      };
+    case "cos-map":
+      return {
+        icon: "◇",
+        text: `CoS Map: ${action.from} → ${action.to}`,
+        color: "bg-yellow-900/30 text-yellow-300",
+      };
     case "ttl-decrement":
       return {
         icon: "−",

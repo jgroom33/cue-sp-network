@@ -428,13 +428,6 @@ function computeL2VPN(
   const { path, interfaces } = pathResult;
   const states: PacketState[] = [];
 
-  // Look up PW config from source PE
-  const srcKey = path[0].replace(/-/g, "_");
-  const srcConfig = configs[srcKey] ?? configs[path[0]];
-  const vpws = srcConfig?.l2vpn_config?.vpws?.[0];
-  const pwId = vpws?.pseudowire?.pw_id ?? 1001;
-  const hasControlWord = vpws?.pseudowire?.control_word ?? true;
-
   // Find ingress/egress PE indices
   const ingressPeIdx = path.findIndex(
     (d) => topo.device_roles?.[d] === "PE"
@@ -443,11 +436,29 @@ function computeL2VPN(
     path,
     (d) => topo.device_roles?.[d] === "PE"
   );
+  const ingressPe = path[ingressPeIdx];
   const egressPe = path[egressPeIdx];
-  const transportLabel = getNodeSidLabel(configs, egressPe);
 
-  // PW label — use pw_id as synthetic label (educational approximation)
+  // Look up PW config from ingress PE
+  const peKey = ingressPe.replace(/-/g, "_");
+  const peConfig = configs[peKey] ?? configs[ingressPe];
+  const vpws = peConfig?.l2vpn_config?.vpws?.[0];
+  const pwId = vpws?.pseudowire?.pw_id ?? 1001;
+  const hasControlWord = vpws?.pseudowire?.control_word ?? true;
+  const transportLabel = getNodeSidLabel(configs, egressPe);
   const pwLabel = pwId;
+
+  // MEF service VLAN used by NIDs
+  const serviceVlan = 100;
+
+  // Look up NID MEF config for bandwidth info
+  const ingressNidIdx = path.findIndex(
+    (d) => topo.device_roles?.[d] === "NID"
+  );
+  const egressNidIdx = findLastIndex(
+    path,
+    (d) => topo.device_roles?.[d] === "NID"
+  );
 
   let currentHeaders: PacketHeaders = {
     ethernet: {
@@ -466,14 +477,50 @@ function computeL2VPN(
 
   for (let i = 0; i < path.length; i++) {
     const dev = path[i];
-    const role = topo.device_roles?.[dev] ?? "PE";
+    const role = topo.device_roles?.[dev] ?? "CE";
     const iface = interfaces[i];
     const actions: PacketAction[] = [];
     const headers = deepCloneHeaders(currentHeaders);
     let annotation = "";
 
-    if (role === "PE" && i === ingressPeIdx) {
-      // Ingress PE: push PW label + transport label
+    if (role === "CE" && i === 0) {
+      // Source CE: sends untagged Ethernet frame
+      actions.push({
+        type: "forward",
+        outInterface: iface.egress || "eth1",
+      });
+      annotation =
+        "Customer device sends an untagged Ethernet frame toward the provider network. The CE has no knowledge of the L2VPN service — it simply sends traffic to its directly connected interface.";
+    } else if (role === "NID" && i === ingressNidIdx) {
+      // Ingress NID: MEF UNI — classify, police, push S-VLAN
+      const nidKey = dev.replace(/-/g, "_");
+      const nidConfig = configs[nidKey] ?? configs[dev];
+      const uni = (nidConfig?.mef_config as { unis?: { uni_id: string; bandwidth_profile?: { cir: number } }[] })?.unis?.[0];
+      const cir = uni?.bandwidth_profile?.cir ?? 100000;
+
+      actions.push({
+        type: "cos-map",
+        from: "PCP 0 (untagged)",
+        to: "best-effort (green)",
+      });
+      actions.push({
+        type: "mef-police",
+        cir: `${cir >= 1000 ? cir / 1000 + " Mbps" : cir + " kbps"}`,
+        result: "conform",
+        action: "transmit",
+      });
+      actions.push({ type: "qinq-push", svlan: serviceVlan });
+
+      headers.ethernet!.sVlan = serviceVlan;
+      headers.ethernet!.etherType = "0x88a8"; // 802.1ad
+
+      annotation =
+        `Ingress NID (${dev}) is the provider-owned demarcation device at the customer site (MEF UNI-N). It performs: (1) CoS classification — mapping the customer's PCP to a service class, (2) MEF bandwidth profiling — policing at CIR ${cir >= 1000 ? cir / 1000 + " Mbps" : cir + " kbps"} to enforce the SLA, and (3) S-VLAN ${serviceVlan} push — tagging the frame for the provider's EVC (${uni?.uni_id ?? "EVC-L2VPN-1001"}). Service OAM (Y.1731 CCM) runs between this MEP and the far-end NID to monitor the end-to-end service.`;
+    } else if (role === "PE" && i === ingressPeIdx) {
+      // Ingress PE: strip S-VLAN, push PW label + transport label
+      actions.push({ type: "qinq-pop", svlan: serviceVlan });
+      headers.ethernet!.sVlan = undefined;
+
       const pwMpls: MplsLabel = {
         value: pwLabel,
         ttl: 255,
@@ -497,7 +544,7 @@ function computeL2VPN(
       headers.ethernet!.etherType = "0x8847";
 
       annotation =
-        `Ingress PE (${dev}) receives the customer Ethernet frame on interface ${iface.ingress || "eth4"} and encapsulates it for pseudowire transport. A two-label stack is pushed: transport label ${transportLabel} (routes to ${egressPe} via SR-MPLS) and PW label ${pwLabel} (identifies this pseudowire service). ${hasControlWord ? "A control word is inserted between the PW label and the payload for sequencing and padding." : ""} The original L2 frame is carried transparently — the customer IP addresses are never examined.`;
+        `Ingress PE (${dev}) receives the S-VLAN-tagged frame from the NID, pops the service VLAN ${serviceVlan} (the EVC tag stays within the access network), and encapsulates the original frame into a pseudowire. A two-label MPLS stack is pushed: transport label ${transportLabel} (SR-MPLS path to ${egressPe}) and PW label ${pwLabel} (pseudowire service identifier). ${hasControlWord ? "A control word provides sequencing and padding." : ""}`;
     } else if (role === "P") {
       // P router: MPLS swap
       const isPenultimateHop = i === egressPeIdx - 1;
@@ -523,18 +570,39 @@ function computeL2VPN(
       headers.ethernet!.srcMac = `00:${dev}:00:00:00:01`;
       headers.ethernet!.dstMac = `00:${path[i + 1]}:00:00:00:01`;
     } else if (role === "PE" && i === egressPeIdx) {
-      // Egress PE: pop PW label, deliver original L2 frame
+      // Egress PE: pop PW label, push S-VLAN for egress NID
       if (headers.mpls?.length) {
         actions.push({ type: "vpn-label-pop", label: headers.mpls[0].value });
       }
       headers.mpls = undefined;
       headers.pseudowire = undefined;
-      headers.ethernet!.etherType = "0x0800";
+
+      actions.push({ type: "qinq-push", svlan: serviceVlan });
+      headers.ethernet!.sVlan = serviceVlan;
+      headers.ethernet!.etherType = "0x88a8";
 
       actions.push({ type: "forward", outInterface: "eth4" });
 
       annotation =
-        `Egress PE (${dev}) pops the PW label ${pwLabel} and delivers the original Ethernet frame out the local attachment circuit (eth4). The frame arrives at the remote customer site exactly as it was sent — MAC addresses, VLAN tags, and payload are all preserved. This is the key value of a pseudowire: transparent L2 transport across an MPLS/IP backbone.`;
+        `Egress PE (${dev}) pops the PW label ${pwLabel}, recovering the original customer Ethernet frame. It then pushes S-VLAN ${serviceVlan} for delivery to the egress NID over the access network. The frame's MAC addresses and payload are preserved end-to-end.`;
+    } else if (role === "NID" && i === egressNidIdx) {
+      // Egress NID: pop S-VLAN, deliver to CE
+      actions.push({ type: "qinq-pop", svlan: serviceVlan });
+      headers.ethernet!.sVlan = undefined;
+      headers.ethernet!.etherType = "0x0800";
+
+      actions.push({ type: "forward", outInterface: "eth1" });
+
+      annotation =
+        `Egress NID (${dev}) pops the service S-VLAN ${serviceVlan} and delivers the original untagged Ethernet frame to the customer (CE). The end-to-end MEF E-Line service is complete — the customer receives exactly what was sent, with the provider network completely transparent. Service OAM (Y.1731) between the two NIDs confirms end-to-end connectivity and SLA compliance.`;
+    } else if (role === "CE" && i === path.length - 1) {
+      // Destination CE: receive
+      actions.push({
+        type: "ip-lookup",
+        result: "Destination reached — deliver to application",
+      });
+      annotation =
+        "Destination CE receives the original Ethernet frame. The L2VPN pseudowire transported it transparently across the provider backbone — the customer is unaware of the MPLS core, the MEF bandwidth profiling, or the S-VLAN tagging used in the access network.";
     }
 
     states.push({

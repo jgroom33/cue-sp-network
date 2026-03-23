@@ -44,6 +44,9 @@ export type PacketAction =
   | { type: "vxlan-encap"; vni: number; outerDst: string }
   | { type: "vxlan-decap" }
   | { type: "qinq-push"; svlan: number }
+  | { type: "qinq-pop"; svlan: number }
+  | { type: "mef-police"; cir: string; result: "conform" | "exceed"; action: string }
+  | { type: "cos-map"; from: string; to: string }
   | { type: "ttl-decrement"; from: number; to: number }
   | { type: "qos-classify"; dscp: string; fwdClass: string }
   | { type: "qos-police"; result: "conform" | "exceed"; action: string }
