@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Topology, Device, DeviceRole, LinkType, OverlayType } from "../types";
 import { roleColors, linkColors, overlayColors, overlayLabels } from "../utils/colors";
-import { toConfigKey, getDeviceProtocols, ALL_PROTOCOLS } from "../utils/graph";
+import { toConfigKey } from "../utils/graph";
 
 interface Props {
   topo: Topology;
@@ -34,7 +34,6 @@ export default function Sidebar({
   onToggleOverlay,
 }: Props) {
   const [search, setSearch] = useState("");
-  const [protocolFilter, setProtocolFilter] = useState<string | null>(null);
 
   // Group devices by role
   const byRole: Record<string, string[]> = {};
@@ -55,13 +54,6 @@ export default function Sidebar({
       cfg?.router_id.includes(q) ||
       (topo.loopbacks[dev] || "").includes(q)
     );
-  };
-
-  const matchesProtocol = (dev: string) => {
-    if (!protocolFilter) return true;
-    const cfg = configs[toConfigKey(dev)];
-    if (!cfg) return false;
-    return getDeviceProtocols(cfg).includes(protocolFilter);
   };
 
   return (
@@ -203,25 +195,6 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Protocol filter */}
-        <div className="px-3 py-2 border-b border-gray-800">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
-            Protocol Filter
-          </div>
-          <select
-            value={protocolFilter || ""}
-            onChange={(e) => setProtocolFilter(e.target.value || null)}
-            className="w-full px-2 py-1 text-xs bg-gray-800 border border-gray-700 rounded text-gray-200 focus:outline-none"
-          >
-            <option value="">All protocols</option>
-            {ALL_PROTOCOLS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Device list */}
         <div className="px-3 py-2">
           {ALL_ROLES.filter((role) => byRole[role]?.length).map((role) => (
@@ -237,7 +210,7 @@ export default function Sidebar({
                 {role} ({byRole[role].length})
               </div>
               {byRole[role]
-                .filter((dev) => matchesSearch(dev) && matchesProtocol(dev))
+                .filter((dev) => matchesSearch(dev))
                 .map((dev) => {
                   const cfg = configs[toConfigKey(dev)];
                   return (
