@@ -186,7 +186,13 @@ function computePacketStates(
     case "l3vpn-ce-to-ce":
       return computeL3VPN(scenario, pathResult, topo, configs);
     case "l2vpn-pseudowire":
+    case "mef-all-to-one":
+    case "mef-many-to-one":
+    case "mef-one-to-one":
       return computeL2VPN(scenario, pathResult, topo, configs);
+    case "mef-enni-enni":
+    case "mef-enni-uni":
+      return computeENNI(scenario, pathResult, topo, configs);
     case "vxlan-ingress-replication":
       return computeVXLAN(scenario, pathResult, topo, configs);
     case "sr-te-low-latency":
@@ -420,7 +426,7 @@ function computeL3VPN(
  * Transparent L2 frame transport with PW label + transport label
  */
 function computeL2VPN(
-  _scenario: ScenarioDefinition,
+  scenario: ScenarioDefinition,
   pathResult: PathResult,
   topo: Topology,
   configs: Record<string, Device>
@@ -492,11 +498,13 @@ function computeL2VPN(
       annotation =
         "Customer device sends an untagged Ethernet frame toward the provider network. The CE has no knowledge of the L2VPN service — it simply sends traffic to its directly connected interface.";
     } else if (role === "NID" && i === ingressNidIdx) {
-      // Ingress NID: MEF UNI — classify, police, push S-VLAN
+      // Ingress NID: MEF UNI — classify, police, VLAN mapping
       const nidKey = dev.replace(/-/g, "_");
       const nidConfig = configs[nidKey] ?? configs[dev];
       const uni = (nidConfig?.mef_config as { unis?: { uni_id: string; bandwidth_profile?: { cir: number } }[] })?.unis?.[0];
       const cir = uni?.bandwidth_profile?.cir ?? 100000;
+      const cirStr = cir >= 1000 ? cir / 1000 + " Mbps" : cir + " kbps";
+      const bt = scenario.bundlingType;
 
       actions.push({
         type: "cos-map",
@@ -505,17 +513,42 @@ function computeL2VPN(
       });
       actions.push({
         type: "mef-police",
-        cir: `${cir >= 1000 ? cir / 1000 + " Mbps" : cir + " kbps"}`,
+        cir: cirStr,
         result: "conform",
         action: "transmit",
       });
-      actions.push({ type: "qinq-push", svlan: serviceVlan });
 
-      headers.ethernet!.sVlan = serviceVlan;
-      headers.ethernet!.etherType = "0x88a8"; // 802.1ad
-
-      annotation =
-        `Ingress NID (${dev}) is the provider-owned demarcation device at the customer site (MEF UNI-N). It performs: (1) CoS classification — mapping the customer's PCP to a service class, (2) MEF bandwidth profiling — policing at CIR ${cir >= 1000 ? cir / 1000 + " Mbps" : cir + " kbps"} to enforce the SLA, and (3) S-VLAN ${serviceVlan} push — tagging the frame for the provider's EVC (${uni?.uni_id ?? "EVC-L2VPN-1001"}). Service OAM (Y.1731 CCM) runs between this MEP and the far-end NID to monitor the end-to-end service.`;
+      if (bt === "all-to-one") {
+        actions.push({ type: "qinq-push", svlan: serviceVlan });
+        headers.ethernet!.sVlan = serviceVlan;
+        headers.ethernet!.etherType = "0x88a8";
+        annotation =
+          `Ingress NID (${dev}) — **All-to-One Bundling**: All customer C-VLANs (10, 20, 30) are mapped to a single EVC and tagged with S-VLAN ${serviceVlan}. This is the simplest bundling model — the NID treats the entire port as one service instance regardless of customer VLAN. Bandwidth profiling at CIR ${cirStr} applies to the aggregate traffic.`;
+      } else if (bt === "many-to-one") {
+        actions.push({ type: "cos-map", from: "C-VLAN 10,20", to: "EVC-A → S-VLAN 100" });
+        actions.push({ type: "cos-map", from: "C-VLAN 30", to: "EVC-B → S-VLAN 200" });
+        actions.push({ type: "qinq-push", svlan: serviceVlan });
+        headers.ethernet!.sVlan = serviceVlan;
+        headers.ethernet!.etherType = "0x88a8";
+        annotation =
+          `Ingress NID (${dev}) — **Many-to-One Bundling**: Customer C-VLANs are grouped into two EVCs: VLANs 10+20 → EVC-A (S-VLAN 100), VLAN 30 → EVC-B (S-VLAN 200). This allows differentiated treatment per VLAN group — e.g., voice/video on EVC-A with strict priority, data on EVC-B with weighted-fair queuing. Each EVC can have its own bandwidth profile.`;
+      } else if (bt === "one-to-one") {
+        actions.push({ type: "cos-map", from: "C-VLAN 10", to: "EVC-1 → S-VLAN 100" });
+        actions.push({ type: "cos-map", from: "C-VLAN 20", to: "EVC-2 → S-VLAN 200" });
+        actions.push({ type: "cos-map", from: "C-VLAN 30", to: "EVC-3 → S-VLAN 300" });
+        actions.push({ type: "qinq-push", svlan: serviceVlan });
+        headers.ethernet!.sVlan = serviceVlan;
+        headers.ethernet!.etherType = "0x88a8";
+        annotation =
+          `Ingress NID (${dev}) — **1:1 VLAN Bundling**: Each customer C-VLAN maps to its own dedicated EVC: VLAN 10 → S-VLAN 100, VLAN 20 → S-VLAN 200, VLAN 30 → S-VLAN 300. Maximum isolation — each VLAN gets independent bandwidth profiling, CoS treatment, and OAM monitoring. This is the most granular MEF bundling model.`;
+      } else {
+        // Default: standard L2VPN pseudowire
+        actions.push({ type: "qinq-push", svlan: serviceVlan });
+        headers.ethernet!.sVlan = serviceVlan;
+        headers.ethernet!.etherType = "0x88a8";
+        annotation =
+          `Ingress NID (${dev}) is the provider-owned demarcation device at the customer site (MEF UNI-N). It performs: (1) CoS classification, (2) MEF bandwidth profiling at CIR ${cirStr}, and (3) S-VLAN ${serviceVlan} push for the provider's EVC. Service OAM (Y.1731 CCM) runs between this MEP and the far-end NID.`;
+      }
     } else if (role === "PE" && i === ingressPeIdx) {
       // Ingress PE: strip S-VLAN, push PW label + transport label
       actions.push({ type: "qinq-pop", svlan: serviceVlan });
@@ -603,6 +636,155 @@ function computeL2VPN(
       });
       annotation =
         "Destination CE receives the original Ethernet frame. The L2VPN pseudowire transported it transparently across the provider backbone — the customer is unaware of the MPLS core, the MEF bandwidth profiling, or the S-VLAN tagging used in the access network.";
+    }
+
+    states.push({
+      hop: i,
+      device: dev,
+      ingressInterface: iface.ingress,
+      egressInterface: iface.egress,
+      headers,
+      actions,
+      annotation,
+    });
+
+    currentHeaders = deepCloneHeaders(headers);
+  }
+
+  return states;
+}
+
+/**
+ * ENNI scenarios: inter-carrier E-Line (ENNI-ENNI) or wholesale (ENNI-UNI)
+ */
+function computeENNI(
+  _scenario: ScenarioDefinition,
+  pathResult: PathResult,
+  topo: Topology,
+  configs: Record<string, Device>
+): PacketState[] {
+  const { path, interfaces } = pathResult;
+  const states: PacketState[] = [];
+  const serviceVlan = 500; // ENNI service VLAN
+
+  // Find PE and NID indices
+  const ingressPeIdx = path.findIndex((d) => topo.device_roles?.[d] === "PE");
+  const egressPeIdx = findLastIndex(path, (d) => topo.device_roles?.[d] === "PE");
+  const egressPe = path[egressPeIdx];
+  const transportLabel = getNodeSidLabel(configs, egressPe);
+  const pwLabel = 2001; // ENNI PW
+
+  let currentHeaders: PacketHeaders = {
+    ethernet: {
+      srcMac: "00:ca:rr:aa:00:01",
+      dstMac: "00:ca:rr:bb:00:01",
+      etherType: "0x88a8",
+      sVlan: 800, // Partner carrier's S-VLAN
+    },
+    ip: {
+      src: "172.20.1.10",
+      dst: "172.20.1.20",
+      ttl: 64,
+      dscp: "be",
+      protocol: "TCP",
+    },
+  };
+
+  for (let i = 0; i < path.length; i++) {
+    const dev = path[i];
+    const role = topo.device_roles?.[dev] ?? "NID";
+    const iface = interfaces[i];
+    const actions: PacketAction[] = [];
+    const headers = deepCloneHeaders(currentHeaders);
+    let annotation = "";
+
+    const nidKey = dev.replace(/-/g, "_");
+    const nidConfig = configs[nidKey] ?? configs[dev];
+    const isEnni = nidConfig?.mef_config?.unis?.[0]?.uni_type === "ENNI";
+
+    if (role === "NID" && i === 0 && isEnni) {
+      // Ingress ENNI: S-VLAN translation (partner S-VLAN → local S-VLAN)
+      actions.push({ type: "qinq-pop", svlan: 800 });
+      actions.push({ type: "cos-map", from: "Partner S-VLAN 800", to: "Local S-VLAN " + serviceVlan });
+      actions.push({ type: "qinq-push", svlan: serviceVlan });
+      actions.push({
+        type: "mef-police",
+        cir: "1 Gbps",
+        result: "conform",
+        action: "transmit",
+      });
+
+      headers.ethernet!.sVlan = serviceVlan;
+
+      annotation =
+        `Ingress ENNI (${dev}) is the inter-carrier boundary device. It performs S-VLAN translation: the partner carrier's S-VLAN 800 is popped and replaced with the local carrier's S-VLAN ${serviceVlan}. Bandwidth policing at the ENNI enforces the inter-carrier SLA (CIR 1 Gbps). Service OAM runs at MD level 2 (lower than UNI level 4) to monitor the ENNI segment independently.`;
+    } else if (role === "PE" && i === ingressPeIdx) {
+      // Ingress PE: strip S-VLAN, push PW + transport
+      actions.push({ type: "qinq-pop", svlan: serviceVlan });
+      headers.ethernet!.sVlan = undefined;
+
+      const pwMpls: MplsLabel = { value: pwLabel, ttl: 255, tc: 0, bottom: true, purpose: `PW Label (ENNI PW ${pwLabel})` };
+      const transportMpls: MplsLabel = { value: transportLabel, ttl: 63, tc: 0, bottom: false, purpose: `Transport (Node SID ${transportLabel} → ${egressPe})` };
+
+      actions.push({ type: "mpls-push", label: pwMpls });
+      actions.push({ type: "mpls-push", label: transportMpls });
+
+      headers.mpls = [transportMpls, pwMpls];
+      headers.pseudowire = { pwLabel, controlWord: true };
+      headers.ethernet!.etherType = "0x8847";
+
+      annotation =
+        `Ingress PE (${dev}) pops the S-VLAN ${serviceVlan} from the ENNI access network and encapsulates the frame into a pseudowire for MPLS transport. Transport label ${transportLabel} routes to ${egressPe}, PW label ${pwLabel} identifies the inter-carrier EVC.`;
+    } else if (role === "P") {
+      const isPenultimateHop = i === egressPeIdx - 1;
+      if (isPenultimateHop && headers.mpls?.length) {
+        actions.push({ type: "php-pop", label: headers.mpls[0].value });
+        if (headers.mpls.length > 1) headers.mpls = [{ ...headers.mpls[1], bottom: true }];
+        annotation = `PHP: P router ${dev} pops the transport label, exposing PW label ${pwLabel}.`;
+      } else if (headers.mpls?.length) {
+        const oldLabel = headers.mpls[0].value;
+        actions.push({ type: "mpls-swap", from: oldLabel, to: transportLabel });
+        headers.mpls[0] = { ...headers.mpls[0], value: transportLabel };
+        const oldTtl = headers.mpls[0].ttl;
+        headers.mpls[0].ttl = oldTtl - 1;
+        actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
+        annotation = `P router ${dev} swaps the transport label — no visibility into the ENNI service payload.`;
+      }
+    } else if (role === "PE" && i === egressPeIdx) {
+      // Egress PE
+      if (headers.mpls?.length) {
+        actions.push({ type: "vpn-label-pop", label: headers.mpls[0].value });
+      }
+      headers.mpls = undefined;
+      headers.pseudowire = undefined;
+
+      actions.push({ type: "qinq-push", svlan: serviceVlan });
+      headers.ethernet!.sVlan = serviceVlan;
+      headers.ethernet!.etherType = "0x88a8";
+
+      annotation =
+        `Egress PE (${dev}) pops the PW label and pushes S-VLAN ${serviceVlan} for delivery to the egress NID/ENNI.`;
+    } else if (role === "NID" && i === path.length - 1 && isEnni) {
+      // Egress ENNI: translate back to partner S-VLAN
+      actions.push({ type: "qinq-pop", svlan: serviceVlan });
+      actions.push({ type: "cos-map", from: "Local S-VLAN " + serviceVlan, to: "Partner S-VLAN 800" });
+      actions.push({ type: "qinq-push", svlan: 800 });
+      headers.ethernet!.sVlan = 800;
+
+      annotation =
+        `Egress ENNI (${dev}) translates the S-VLAN back to the partner carrier's tag (S-VLAN 800) for handoff across the inter-carrier boundary. The frame exits with the partner's S-VLAN intact, completing the ENNI-to-ENNI E-Line service.`;
+    } else if (role === "NID" && !isEnni) {
+      // Egress UNI NID (for ENNI-UNI scenario)
+      actions.push({ type: "qinq-pop", svlan: serviceVlan });
+      headers.ethernet!.sVlan = undefined;
+      headers.ethernet!.etherType = "0x0800";
+      actions.push({ type: "forward", outInterface: "eth1" });
+
+      annotation =
+        `Egress NID (${dev}) is the retail UNI demarcation. It pops the S-VLAN ${serviceVlan} and delivers the original frame to the customer — the wholesale ENNI ingress and retail UNI egress complete the asymmetric E-Line.`;
+    } else if (role === "CE") {
+      actions.push({ type: "ip-lookup", result: "Destination reached" });
+      annotation = "Destination CE receives the frame delivered through the MEF E-Line service.";
     }
 
     states.push({

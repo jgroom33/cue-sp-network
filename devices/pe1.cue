@@ -12,8 +12,7 @@ pe1: device.#Device & {
 		{name: "lo1", type: "loopback", ipv4: "10.0.1.1/32", description: "vtep-source"},
 		{name: "eth1", type: "physical", ipv4: "10.1.0.0/31", description: "to-p1"},
 		{name: "eth2", type: "physical", ipv4: "10.1.0.2/31", description: "to-p3"},
-		{name: "eth3", type: "physical", description: "customer-a-facing"},
-		{name: "eth3.100", type: "subinterface", description: "customer-a-l3vpn"},
+		{name: "eth3", type: "physical", ipv4: "10.2.10.1/31", description: "to-enni1-nni"},
 		{name: "eth4", type: "physical", ipv4: "10.2.7.1/31", description: "to-nid1-nni-l2vpn"},
 		{name: "eth5", type: "physical", ipv4: "10.1.0.34/31", description: "to-agg5-ring-west"},
 		{name: "eth6", type: "physical", ipv4: "10.1.0.20/31", description: "to-agg1-ring-east"},
@@ -202,7 +201,7 @@ pe1: device.#Device & {
 		l3vpns: [{
 			name: "CUSTOMER-A", rd: "65000:100"
 			rt_import: ["65000:100"], rt_export: ["65000:100"]
-			interfaces: ["eth3.100"]
+			interfaces: ["eth3"]
 		}]
 		evpn_instances: [{
 			name: "ELAN-A", evi: 100, rd: "65000:10100"
@@ -231,7 +230,7 @@ pe1: device.#Device & {
 	// --- 802.1ad ---
 	dot1ad_config: {
 		interfaces: [
-			{interface: "eth3", port_mode: "S-UNI", svlan: {svlan_id: 100}, cvlan_range: [10, 20, 30]},
+			{interface: "eth3", port_mode: "NNI", svlan: {svlan_id: 100}},
 			{interface: "eth5", port_mode: "NNI", svlan: {svlan_id: 300}},
 			{interface: "eth6", port_mode: "NNI", svlan: {svlan_id: 300}},
 		]
@@ -246,7 +245,7 @@ pe1: device.#Device & {
 		vpls: [{
 			name: "CUST-A-VPLS", vpls_id: 2001, rd: "65000:2001"
 			rt_import: ["65000:2001"], rt_export: ["65000:2001"]
-			signaling: "bgp", interfaces: ["eth3.100"]
+			signaling: "bgp", interfaces: ["eth3"]
 			mac_table_size: 32768, mac_aging_time: 300
 		}]
 	}

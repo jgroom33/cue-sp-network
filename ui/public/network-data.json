@@ -17,6 +17,8 @@
                 "agg5",
                 "nid1",
                 "nid2",
+                "enni1",
+                "enni2",
                 "ce1",
                 "ce2",
                 "ce3",
@@ -40,6 +42,8 @@
                 "agg5": "AGG",
                 "nid1": "NID",
                 "nid2": "NID",
+                "enni1": "NID",
+                "enni2": "NID",
                 "ce1": "CE",
                 "ce2": "CE",
                 "ce3": "CE",
@@ -320,21 +324,32 @@
                         "interface": "eth3"
                     },
                     "z_end": {
-                        "device": "customer-a",
-                        "interface": "eth0"
+                        "device": "enni1",
+                        "interface": "eth2"
                     },
-                    "type": "customer"
+                    "type": "edge"
                 },
                 {
                     "a_end": {
+                        "device": "enni1",
+                        "interface": "eth1"
+                    },
+                    "z_end": {
+                        "device": "enni2",
+                        "interface": "eth1"
+                    },
+                    "type": "peering"
+                },
+                {
+                    "a_end": {
+                        "device": "enni2",
+                        "interface": "eth2"
+                    },
+                    "z_end": {
                         "device": "pe2",
                         "interface": "eth3"
                     },
-                    "z_end": {
-                        "device": "customer-b",
-                        "interface": "eth0"
-                    },
-                    "type": "customer"
+                    "type": "edge"
                 }
             ],
             "loopbacks": {
@@ -354,6 +369,8 @@
                 "agg5": "10.0.0.16",
                 "nid1": "10.0.2.1",
                 "nid2": "10.0.2.2",
+                "enni1": "10.0.2.3",
+                "enni2": "10.0.2.4",
                 "ce1": "192.168.1.1",
                 "ce2": "192.168.2.1",
                 "ce3": "192.168.3.1",
@@ -390,7 +407,10 @@
                 "ce1-nid1": "10.2.5.0/31",
                 "nid1-pe1": "10.2.7.0/31",
                 "ce4-nid2": "10.2.6.0/31",
-                "nid2-pe2": "10.2.8.0/31"
+                "nid2-pe2": "10.2.8.0/31",
+                "enni1-enni2": "10.2.9.0/31",
+                "pe1-enni1": "10.2.10.0/31",
+                "enni2-pe2": "10.2.11.0/31"
             },
             "management_subnet": "10.100.0.0/24",
             "sp_asn": 65000,
@@ -437,17 +457,11 @@
                     },
                     {
                         "name": "eth3",
-                        "description": "customer-a-facing",
+                        "description": "to-enni1-nni",
                         "enabled": true,
                         "mtu": 9000,
+                        "ipv4": "10.2.10.1/31",
                         "type": "physical"
-                    },
-                    {
-                        "name": "eth3.100",
-                        "description": "customer-a-l3vpn",
-                        "enabled": true,
-                        "mtu": 9000,
-                        "type": "subinterface"
                     },
                     {
                         "name": "eth4",
@@ -787,7 +801,7 @@
                                 "65000:100"
                             ],
                             "interfaces": [
-                                "eth3.100"
+                                "eth3"
                             ],
                             "ipv4": true,
                             "ipv6": false
@@ -925,16 +939,12 @@
                     "interfaces": [
                         {
                             "interface": "eth3",
-                            "port_mode": "S-UNI",
+                            "port_mode": "NNI",
                             "svlan": {
                                 "svlan_id": 100,
                                 "tpid": 34984
                             },
-                            "cvlan_range": [
-                                10,
-                                20,
-                                30
-                            ]
+                            "cvlan_range": []
                         },
                         {
                             "interface": "eth5",
@@ -1105,7 +1115,7 @@
                             "mac_aging_time": 300,
                             "mac_withdraw": true,
                             "interfaces": [
-                                "eth3.100"
+                                "eth3"
                             ],
                             "pseudowires": [],
                             "split_horizon": true
@@ -1778,17 +1788,11 @@
                     },
                     {
                         "name": "eth3",
-                        "description": "customer-b-facing",
+                        "description": "to-enni2-nni",
                         "enabled": true,
                         "mtu": 9000,
+                        "ipv4": "10.2.11.1/31",
                         "type": "physical"
-                    },
-                    {
-                        "name": "eth3.200",
-                        "description": "customer-b-l3vpn",
-                        "enabled": true,
-                        "mtu": 9000,
-                        "type": "subinterface"
                     },
                     {
                         "name": "eth4",
@@ -2023,7 +2027,7 @@
                                 "65000:200"
                             ],
                             "interfaces": [
-                                "eth3.200"
+                                "eth3"
                             ],
                             "ipv4": true,
                             "ipv6": false
@@ -2054,16 +2058,12 @@
                     "interfaces": [
                         {
                             "interface": "eth3",
-                            "port_mode": "S-UNI",
+                            "port_mode": "NNI",
                             "svlan": {
                                 "svlan_id": 200,
                                 "tpid": 34984
                             },
-                            "cvlan_range": [
-                                10,
-                                20,
-                                30
-                            ]
+                            "cvlan_range": []
                         },
                         {
                             "interface": "eth6",
@@ -2582,7 +2582,7 @@
                             "mac_aging_time": 300,
                             "mac_withdraw": true,
                             "interfaces": [
-                                "eth3.200"
+                                "eth3"
                             ],
                             "pseudowires": [],
                             "split_horizon": true
@@ -11324,6 +11324,220 @@
                                 "performance_monitoring": true
                             },
                             "evc_id": "EVC-L2VPN-1001",
+                            "evc_type": "point-to-point"
+                        }
+                    ]
+                }
+            },
+            "enni1": {
+                "hostname": "enni1",
+                "role": "NID",
+                "router_id": "10.0.2.3",
+                "interfaces": [
+                    {
+                        "name": "eth1",
+                        "description": "enni-to-enni2",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.9.0/31",
+                        "type": "physical"
+                    },
+                    {
+                        "name": "eth2",
+                        "description": "nni-to-pe1",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.10.0/31",
+                        "type": "physical"
+                    }
+                ],
+                "lldp_config": {
+                    "enabled": true,
+                    "tx_interval": 30,
+                    "hold_multiplier": 4,
+                    "reinit_delay": 2,
+                    "tx_delay": 2,
+                    "chassis_id_subtype": "mac-address",
+                    "optional_tlvs": [
+                        "system-name",
+                        "system-description",
+                        "system-capabilities",
+                        "port-description",
+                        "management-address"
+                    ],
+                    "interfaces": [
+                        {
+                            "name": "eth1",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        },
+                        {
+                            "name": "eth2",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        }
+                    ],
+                    "med_policies": []
+                },
+                "mef_config": {
+                    "enabled": true,
+                    "unis": [
+                        {
+                            "uni_id": "ENNI-CARRIER-A",
+                            "uni_type": "ENNI",
+                            "interface": "eth1",
+                            "bandwidth_profile": {
+                                "cir": 1000000,
+                                "cbs": 131072,
+                                "eir": 2000000,
+                                "ebs": 262144,
+                                "color_mode": "color-aware",
+                                "coupling_flag": false
+                            },
+                            "cos_mapping": {
+                                "type": "pcp",
+                                "pcp_entries": [
+                                    {
+                                        "pcp": 5,
+                                        "cos_name": "voice",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 4,
+                                        "cos_name": "video",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 3,
+                                        "cos_name": "critical-data",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 0,
+                                        "cos_name": "best-effort",
+                                        "color": "green"
+                                    }
+                                ]
+                            },
+                            "service_oam": {
+                                "md_level": 2,
+                                "mep_id": 301,
+                                "ccm_interval": "100ms",
+                                "remote_mep_id": 302,
+                                "loopback": true,
+                                "linktrace": true,
+                                "performance_monitoring": true
+                            },
+                            "evc_id": "EVC-INTERCARRIER-2001",
+                            "evc_type": "point-to-point"
+                        }
+                    ]
+                }
+            },
+            "enni2": {
+                "hostname": "enni2",
+                "role": "NID",
+                "router_id": "10.0.2.4",
+                "interfaces": [
+                    {
+                        "name": "eth1",
+                        "description": "enni-to-enni1",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.9.1/31",
+                        "type": "physical"
+                    },
+                    {
+                        "name": "eth2",
+                        "description": "nni-to-pe2",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.11.0/31",
+                        "type": "physical"
+                    }
+                ],
+                "lldp_config": {
+                    "enabled": true,
+                    "tx_interval": 30,
+                    "hold_multiplier": 4,
+                    "reinit_delay": 2,
+                    "tx_delay": 2,
+                    "chassis_id_subtype": "mac-address",
+                    "optional_tlvs": [
+                        "system-name",
+                        "system-description",
+                        "system-capabilities",
+                        "port-description",
+                        "management-address"
+                    ],
+                    "interfaces": [
+                        {
+                            "name": "eth1",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        },
+                        {
+                            "name": "eth2",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        }
+                    ],
+                    "med_policies": []
+                },
+                "mef_config": {
+                    "enabled": true,
+                    "unis": [
+                        {
+                            "uni_id": "ENNI-CARRIER-B",
+                            "uni_type": "ENNI",
+                            "interface": "eth1",
+                            "bandwidth_profile": {
+                                "cir": 1000000,
+                                "cbs": 131072,
+                                "eir": 2000000,
+                                "ebs": 262144,
+                                "color_mode": "color-aware",
+                                "coupling_flag": false
+                            },
+                            "cos_mapping": {
+                                "type": "pcp",
+                                "pcp_entries": [
+                                    {
+                                        "pcp": 5,
+                                        "cos_name": "voice",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 4,
+                                        "cos_name": "video",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 3,
+                                        "cos_name": "critical-data",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 0,
+                                        "cos_name": "best-effort",
+                                        "color": "green"
+                                    }
+                                ]
+                            },
+                            "service_oam": {
+                                "md_level": 2,
+                                "mep_id": 302,
+                                "ccm_interval": "100ms",
+                                "remote_mep_id": 301,
+                                "loopback": true,
+                                "linktrace": true,
+                                "performance_monitoring": true
+                            },
+                            "evc_id": "EVC-INTERCARRIER-2001",
                             "evc_type": "point-to-point"
                         }
                     ]

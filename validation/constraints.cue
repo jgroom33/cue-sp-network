@@ -25,6 +25,8 @@ _all_devices: {
 	isp_upstream: devices.isp_upstream
 	nid1:         devices.nid1
 	nid2:         devices.nid2
+	enni1:        devices.enni1
+	enni2:        devices.enni2
 	ce1:          devices.ce1
 	ce2:          devices.ce2
 	ce3:          devices.ce3

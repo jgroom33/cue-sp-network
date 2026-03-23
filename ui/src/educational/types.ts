@@ -72,7 +72,8 @@ export interface ScenarioDefinition {
   name: string;
   shortName: string;
   description: string;
-  category: "l3vpn" | "l2vpn" | "vxlan" | "sr-te" | "bgp" | "tilfa" | "internet";
+  category: "l3vpn" | "l2vpn" | "mef" | "vxlan" | "sr-te" | "bgp" | "tilfa" | "internet";
+  group: "sp-core" | "data-center" | "mef-services";
   icon: string;
   color: string;
   concepts: string[];
@@ -82,6 +83,7 @@ export interface ScenarioDefinition {
   destDevice: string;
   explicitPath?: string[]; // For SR-TE or forced paths
   overlayType?: "l3vpn" | "vxlan" | "l2vpn" | "internet";
+  bundlingType?: "all-to-one" | "many-to-one" | "one-to-one";
 }
 
 export interface ComputedScenario {

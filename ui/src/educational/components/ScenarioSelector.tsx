@@ -1,5 +1,5 @@
 import type { ScenarioDefinition } from "../types";
-import { scenarios } from "../scenarios";
+import { scenarios, scenarioGroups } from "../scenarios";
 
 interface Props {
   onSelect: (scenario: ScenarioDefinition) => void;
@@ -8,6 +8,7 @@ interface Props {
 const categoryColors: Record<string, string> = {
   l3vpn: "border-blue-500 bg-blue-500/10 hover:bg-blue-500/20",
   l2vpn: "border-teal-500 bg-teal-500/10 hover:bg-teal-500/20",
+  mef: "border-orange-500 bg-orange-500/10 hover:bg-orange-500/20",
   vxlan: "border-violet-500 bg-violet-500/10 hover:bg-violet-500/20",
   "sr-te": "border-pink-500 bg-pink-500/10 hover:bg-pink-500/20",
   bgp: "border-amber-500 bg-amber-500/10 hover:bg-amber-500/20",
@@ -23,44 +24,56 @@ export function ScenarioSelector({ onSelect }: Props) {
       </h2>
       <p className="text-sm text-gray-400 mb-4">
         Select a scenario to visualize packet flow through the network.
-        Watch headers change at each hop with animated forwarding.
       </p>
-      <div className="grid grid-cols-1 gap-3">
-        {scenarios.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => onSelect(s)}
-            className={`text-left p-3 rounded-lg border ${
-              categoryColors[s.category] ?? "border-gray-600 bg-gray-800"
-            } transition-all cursor-pointer`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">{s.icon}</span>
-              <span className="font-semibold text-white text-sm">
-                {s.name}
-              </span>
+
+      {scenarioGroups.map((group) => {
+        const groupScenarios = scenarios.filter((s) => s.group === group.id);
+        if (groupScenarios.length === 0) return null;
+
+        return (
+          <div key={group.id} className="mb-4">
+            <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">
+              {group.label}
             </div>
-            <p className="text-xs text-gray-300 mb-2 line-clamp-2">
-              {s.description}
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {s.concepts.slice(0, 3).map((c) => (
-                <span
-                  key={c}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-gray-700/60 text-gray-300"
+            <div className="grid grid-cols-1 gap-2">
+              {groupScenarios.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => onSelect(s)}
+                  className={`text-left p-2.5 rounded-lg border ${
+                    categoryColors[s.category] ?? "border-gray-600 bg-gray-800"
+                  } transition-all cursor-pointer`}
                 >
-                  {c}
-                </span>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-sm">{s.icon}</span>
+                    <span className="font-semibold text-white text-xs">
+                      {s.name}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-300 mb-1.5 line-clamp-2">
+                    {s.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {s.concepts.slice(0, 3).map((c) => (
+                      <span
+                        key={c}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-gray-700/60 text-gray-300"
+                      >
+                        {c}
+                      </span>
+                    ))}
+                    {s.concepts.length > 3 && (
+                      <span className="text-[9px] px-1.5 py-0.5 text-gray-500">
+                        +{s.concepts.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                </button>
               ))}
-              {s.concepts.length > 3 && (
-                <span className="text-[10px] px-1.5 py-0.5 text-gray-500">
-                  +{s.concepts.length - 3} more
-                </span>
-              )}
             </div>
-          </button>
-        ))}
-      </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

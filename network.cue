@@ -1,6 +1,6 @@
 package network
 
-// Top-level network model — 21 devices, 12+ protocol schemas
+// Top-level network model — 23 devices, 12+ protocol schemas
 
 import (
 	"github.com/jgroom/sp-network-model/topology"
@@ -41,6 +41,8 @@ network: {
 		// Network Interface Devices (MEF UNI demarcation)
 		nid1: devices.nid1
 		nid2: devices.nid2
+		enni1: devices.enni1
+		enni2: devices.enni2
 		// Customer Edge
 		ce1: devices.ce1
 		ce2: devices.ce2
