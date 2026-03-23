@@ -12,7 +12,7 @@ interface Props {
   onToggleOverlay: (o: OverlayType) => void;
 }
 
-const ALL_ROLES: DeviceRole[] = ["PE", "P", "RR", "ASBR", "AGG", "CE", "PCE", "EXTERNAL"];
+const ALL_ROLES: DeviceRole[] = ["PE", "P", "RR", "ASBR", "AGG", "CE", "NID", "PCE", "EXTERNAL"];
 const ALL_LINK_TYPES: LinkType[] = ["core", "edge", "customer", "peering"];
 const ALL_OVERLAYS: OverlayType[] = ["ibgp", "ebgp", "sr-sids", "link-ips", "loopbacks"];
 const CLOUD_OVERLAYS: OverlayType[] = ["cloud-isis", "cloud-bgp", "cloud-vxlan", "cloud-erps", "cloud-l2vpn"];

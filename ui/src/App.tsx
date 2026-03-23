@@ -13,7 +13,7 @@ import {
   initialEducationalState,
 } from "./educational";
 
-const ALL_ROLES = new Set<DeviceRole>(["PE", "P", "RR", "ASBR", "AGG", "CE", "PCE", "EXTERNAL"]);
+const ALL_ROLES = new Set<DeviceRole>(["PE", "P", "RR", "ASBR", "AGG", "CE", "NID", "PCE", "EXTERNAL"]);
 const ALL_LINK_TYPES = new Set<LinkType>(["core", "edge", "customer", "peering"]);
 
 export default function App() {

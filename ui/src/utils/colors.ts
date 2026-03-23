@@ -7,7 +7,7 @@ export const roleColors: Record<DeviceRole, string> = {
   ASBR: "#ef4444",     // red
   AGG: "#f97316",      // orange
   CE: "#22c55e",       // green
-  NID: "#d97706",      // amber-600
+  NID: "#eab308",      // yellow-500
   PCE: "#14b8a6",      // teal
   EXTERNAL: "#ec4899", // pink
 };

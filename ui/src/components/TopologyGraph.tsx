@@ -180,7 +180,7 @@ export default function TopologyGraph({
       });
 
     // --- Link IP overlay ---
-    const linkIpGroup = g.append("g").attr("class", "overlay-link-ips");
+    const linkIpGroup = g.append("g").attr("class", "overlay-link-ips").attr("opacity", 0);
     const linkIpTexts: {
       aText: d3.Selection<SVGTextElement, unknown, null, undefined>;
       zText: d3.Selection<SVGTextElement, unknown, null, undefined>;
@@ -216,7 +216,7 @@ export default function TopologyGraph({
     const ibgpLinks = overlayData.bgpLinks.filter((l) => l.type === "ibgp");
     const ebgpLinks = overlayData.bgpLinks.filter((l) => l.type === "ebgp");
 
-    const ibgpGroup = g.append("g").attr("class", "overlay-ibgp");
+    const ibgpGroup = g.append("g").attr("class", "overlay-ibgp").attr("opacity", 0);
     const ibgpPaths = ibgpGroup
       .selectAll<SVGPathElement, OverlayLink>("path")
       .data(ibgpLinks)
@@ -253,7 +253,7 @@ export default function TopologyGraph({
         tooltip.classed("hidden", true);
       });
 
-    const ebgpGroup = g.append("g").attr("class", "overlay-ebgp");
+    const ebgpGroup = g.append("g").attr("class", "overlay-ebgp").attr("opacity", 0);
     const ebgpPaths = ebgpGroup
       .selectAll<SVGPathElement, OverlayLink>("path")
       .data(ebgpLinks)
@@ -288,7 +288,7 @@ export default function TopologyGraph({
       });
 
     // --- SR SID overlay labels ---
-    const srGroup = g.append("g").attr("class", "overlay-sr-sids");
+    const srGroup = g.append("g").attr("class", "overlay-sr-sids").attr("opacity", 0);
     const srEntries = Object.entries(overlayData.srLabels);
     const srTexts = srGroup
       .selectAll<SVGTextElement, [string, { nodeSid: number }]>("text")
@@ -304,7 +304,7 @@ export default function TopologyGraph({
       .style("pointer-events", "none");
 
     // --- Loopback overlay labels ---
-    const loopbackGroup = g.append("g").attr("class", "overlay-loopbacks");
+    const loopbackGroup = g.append("g").attr("class", "overlay-loopbacks").attr("opacity", 0);
     const loopbackEntries = nodes
       .filter((n) => topo.loopbacks[n.id])
       .map((n) => ({ node: n, ip: topo.loopbacks[n.id] }));
