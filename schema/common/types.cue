@@ -58,7 +58,7 @@ package common
 }
 
 // Device role in the SP network
-#DeviceRole: "PE" | "P" | "RR" | "AGG" | "ASBR" | "CE" | "PCE" | "EXTERNAL"
+#DeviceRole: "PE" | "P" | "RR" | "AGG" | "ASBR" | "CE" | "NID" | "PCE" | "EXTERNAL"
 
 // Static route (for CE devices and simple routing)
 #StaticRoute: {

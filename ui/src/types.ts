@@ -1,6 +1,6 @@
 // TypeScript interfaces matching CUE export structure
 
-export type DeviceRole = "PE" | "P" | "RR" | "AGG" | "ASBR" | "CE" | "PCE" | "EXTERNAL";
+export type DeviceRole = "PE" | "P" | "RR" | "AGG" | "ASBR" | "CE" | "NID" | "PCE" | "EXTERNAL";
 export type LinkType = "core" | "edge" | "customer" | "peering";
 export type OverlayType =
   | "ibgp" | "ebgp" | "sr-sids" | "link-ips" | "loopbacks"
@@ -105,6 +105,7 @@ export interface Device {
   ldp_config?: LDPConfig;
   netflow_config?: NetflowConfig;
   erps_config?: ERPSConfig;
+  mef_config?: MEFConfig;
   static_routes?: StaticRoute[];
 }
 
@@ -768,4 +769,32 @@ export interface ERPSPort {
   interface: string;
   port_role: "east" | "west";
   admin_state?: string;
+}
+
+// MEF UNI
+export interface MEFConfig {
+  enabled: boolean;
+  unis: MEFUni[];
+}
+
+export interface MEFUni {
+  uni_id: string;
+  uni_type: string;
+  interface: string;
+  evc_id: string;
+  evc_type: string;
+  bandwidth_profile: {
+    cir: number;
+    cbs: number;
+    eir?: number;
+    ebs?: number;
+    color_mode: string;
+  };
+  cos_mapping?: { type: string };
+  service_oam?: {
+    md_level: number;
+    mep_id: number;
+    ccm_interval: string;
+    remote_mep_id: number;
+  };
 }

@@ -55,11 +55,14 @@ const fixedPositions: Record<string, { x: number; y: number }> = {
   agg1:           { x: 0.32, y: 0.78 },
   agg5:           { x: 0.12, y: 0.72 },
   agg2:           { x: 0.75, y: 0.78 },
-  // CEs — bottom tier (ce2/ce3 via AGGs) and L2VPN CEs near PEs
-  ce1:            { x: 0.15, y: 0.64 },
+  // NIDs — MEF UNI demarcation (between CEs and PEs)
+  nid1:           { x: 0.12, y: 0.58 },
+  nid2:           { x: 0.88, y: 0.58 },
+  // CEs — bottom tier (ce2/ce3 via AGGs) and L2VPN CEs via NIDs
+  ce1:            { x: 0.05, y: 0.50 },
   ce2:            { x: 0.25, y: 0.92 },
   ce3:            { x: 0.75, y: 0.92 },
-  ce4:            { x: 0.85, y: 0.64 },
+  ce4:            { x: 0.95, y: 0.50 },
 };
 
 // Fallback positions by role (for any device not in the map above)
@@ -70,6 +73,7 @@ const roleYPositions: Record<DeviceRole, number> = {
   PCE: 0.3,
   P: 0.45,
   PE: 0.7,
+  NID: 0.75,
   AGG: 0.8,
   CE: 0.92,
 };
@@ -169,6 +173,7 @@ export function getDeviceProtocols(device: Device): string[] {
   if (device.l2qos_config?.enabled) protocols.push("L2 QoS");
   if (device.route_policy_config) protocols.push("Route Policy");
   if (device.erps_config?.enabled) protocols.push("G.8032");
+  if (device.mef_config?.enabled) protocols.push("MEF UNI");
   if (device.handoff_config) protocols.push("Handoff");
   if (device.lldp_config?.enabled) protocols.push("LLDP");
   return protocols;
@@ -179,5 +184,5 @@ export const ALL_PROTOCOLS = [
   "IS-IS", "SR-MPLS", "BGP", "OSPF", "BFD", "QoS", "TI-LFA",
   "SR Policy", "VXLAN", "L2VPN", "VRRP", "ACL", "CoPP", "RPKI",
   "MACsec", "Flowspec", "802.1Q", "802.1ad", "L2 QoS", "Route Policy",
-  "G.8032", "Handoff", "LLDP",
+  "G.8032", "MEF UNI", "Handoff", "LLDP",
 ];

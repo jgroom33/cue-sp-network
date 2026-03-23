@@ -10,7 +10,7 @@ ce1: device.#Device & {
 
 	interfaces: [
 		{name: "lo0", type: "loopback", ipv4: "192.168.1.1/32"},
-		{name: "eth1", type: "physical", ipv4: "10.2.5.1/31", description: "to-pe1-l2vpn"},
+		{name: "eth1", type: "physical", ipv4: "10.2.5.0/31", description: "to-nid1-uni"},
 	]
 
 	lldp_config: {

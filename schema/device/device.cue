@@ -30,6 +30,7 @@ import (
 	"github.com/jgroom/sp-network-model/schema/ntp"
 	"github.com/jgroom/sp-network-model/schema/netflow"
 	"github.com/jgroom/sp-network-model/schema/erps"
+	"github.com/jgroom/sp-network-model/schema/mef"
 )
 
 #Device: {
@@ -65,6 +66,7 @@ import (
 	ntp_config?:          ntp.#NTPConfig
 	netflow_config?:      netflow.#NetflowConfig
 	erps_config?:         erps.#ERPSConfig
+	mef_config?:          mef.#MEFConfig
 	static_routes?:       [...common.#StaticRoute]
 	mgmt_vrf?:            common.#ManagementVRF
 
@@ -161,6 +163,12 @@ import (
 	if role == "EXTERNAL" {
 		bgp_config:  bgp.#BGPConfig
 		lldp_config: lldp.#LLDPConfig
+	}
+
+	// --- NID: MEF UNI demarcation — LLDP + MEF required ---
+	if role == "NID" {
+		lldp_config: lldp.#LLDPConfig
+		mef_config:  mef.#MEFConfig
 	}
 
 	// --- CE: minimal — LLDP required, all other protocols optional ---

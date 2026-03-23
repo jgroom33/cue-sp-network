@@ -392,6 +392,7 @@ export default function TopologyGraph({
           ASBR: "AS",
           AGG: "AG",
           CE: "CE",
+          NID: "NI",
           PCE: "PC",
           EXTERNAL: "EX",
         };

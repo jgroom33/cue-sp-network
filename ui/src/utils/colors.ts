@@ -7,6 +7,7 @@ export const roleColors: Record<DeviceRole, string> = {
   ASBR: "#ef4444",     // red
   AGG: "#f97316",      // orange
   CE: "#22c55e",       // green
+  NID: "#a3e635",      // lime
   PCE: "#14b8a6",      // teal
   EXTERNAL: "#ec4899", // pink
 };
@@ -18,6 +19,7 @@ export const roleBgColors: Record<DeviceRole, string> = {
   ASBR: "bg-red-500",
   AGG: "bg-orange-500",
   CE: "bg-green-500",
+  NID: "bg-lime-500",
   PCE: "bg-teal-500",
   EXTERNAL: "bg-pink-500",
 };
@@ -29,6 +31,7 @@ export const roleBorderColors: Record<DeviceRole, string> = {
   ASBR: "border-red-500",
   AGG: "border-orange-500",
   CE: "border-green-500",
+  NID: "border-lime-500",
   PCE: "border-teal-500",
   EXTERNAL: "border-pink-500",
 };
@@ -73,6 +76,7 @@ export const nodeRadius: Record<DeviceRole, number> = {
   ASBR: 22,
   AGG: 16,
   CE: 14,
+  NID: 14,
   PCE: 18,
   EXTERNAL: 16,
 };

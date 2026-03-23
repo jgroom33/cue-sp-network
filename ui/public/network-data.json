@@ -15,6 +15,8 @@
                 "agg1",
                 "agg2",
                 "agg5",
+                "nid1",
+                "nid2",
                 "ce1",
                 "ce2",
                 "ce3",
@@ -36,6 +38,8 @@
                 "agg1": "AGG",
                 "agg2": "AGG",
                 "agg5": "AGG",
+                "nid1": "NID",
+                "nid2": "NID",
                 "ce1": "CE",
                 "ce2": "CE",
                 "ce3": "CE",
@@ -268,25 +272,47 @@
                 },
                 {
                     "a_end": {
-                        "device": "pe1",
-                        "interface": "eth4"
+                        "device": "ce1",
+                        "interface": "eth1"
                     },
                     "z_end": {
-                        "device": "ce1",
+                        "device": "nid1",
                         "interface": "eth1"
                     },
                     "type": "customer"
                 },
                 {
                     "a_end": {
-                        "device": "pe2",
-                        "interface": "eth4"
+                        "device": "nid1",
+                        "interface": "eth2"
                     },
                     "z_end": {
+                        "device": "pe1",
+                        "interface": "eth4"
+                    },
+                    "type": "edge"
+                },
+                {
+                    "a_end": {
                         "device": "ce4",
                         "interface": "eth1"
                     },
+                    "z_end": {
+                        "device": "nid2",
+                        "interface": "eth1"
+                    },
                     "type": "customer"
+                },
+                {
+                    "a_end": {
+                        "device": "nid2",
+                        "interface": "eth2"
+                    },
+                    "z_end": {
+                        "device": "pe2",
+                        "interface": "eth4"
+                    },
+                    "type": "edge"
                 },
                 {
                     "a_end": {
@@ -326,6 +352,8 @@
                 "asbr2": "10.0.0.12",
                 "pce1": "10.0.0.13",
                 "agg5": "10.0.0.16",
+                "nid1": "10.0.2.1",
+                "nid2": "10.0.2.2",
                 "ce1": "192.168.1.1",
                 "ce2": "192.168.2.1",
                 "ce3": "192.168.3.1",
@@ -359,8 +387,10 @@
             "customer_subnets": {
                 "agg1-ce2": "10.2.1.0/31",
                 "agg2-ce3": "10.2.2.0/31",
-                "pe1-ce1": "10.2.5.0/31",
-                "pe2-ce4": "10.2.6.0/31"
+                "ce1-nid1": "10.2.5.0/31",
+                "nid1-pe1": "10.2.7.0/31",
+                "ce4-nid2": "10.2.6.0/31",
+                "nid2-pe2": "10.2.8.0/31"
             },
             "management_subnet": "10.100.0.0/24",
             "sp_asn": 65000,
@@ -421,10 +451,10 @@
                     },
                     {
                         "name": "eth4",
-                        "description": "to-ce1-l2vpn-pw",
+                        "description": "to-nid1-nni-l2vpn",
                         "enabled": true,
                         "mtu": 9000,
-                        "ipv4": "10.2.5.0/31",
+                        "ipv4": "10.2.7.1/31",
                         "type": "physical"
                     },
                     {
@@ -1762,10 +1792,10 @@
                     },
                     {
                         "name": "eth4",
-                        "description": "to-ce4-l2vpn-pw",
+                        "description": "to-nid2-nni-l2vpn",
                         "enabled": true,
                         "mtu": 9000,
-                        "ipv4": "10.2.6.0/31",
+                        "ipv4": "10.2.8.1/31",
                         "type": "physical"
                     },
                     {
@@ -11075,6 +11105,230 @@
                     "med_policies": []
                 }
             },
+            "nid1": {
+                "hostname": "nid1",
+                "role": "NID",
+                "router_id": "10.0.2.1",
+                "interfaces": [
+                    {
+                        "name": "eth1",
+                        "description": "uni-c-to-ce1",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.5.1/31",
+                        "type": "physical"
+                    },
+                    {
+                        "name": "eth2",
+                        "description": "nni-to-pe1",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.7.0/31",
+                        "type": "physical"
+                    }
+                ],
+                "lldp_config": {
+                    "enabled": true,
+                    "tx_interval": 30,
+                    "hold_multiplier": 4,
+                    "reinit_delay": 2,
+                    "tx_delay": 2,
+                    "chassis_id_subtype": "mac-address",
+                    "optional_tlvs": [
+                        "system-name",
+                        "system-description",
+                        "system-capabilities",
+                        "port-description",
+                        "management-address"
+                    ],
+                    "interfaces": [
+                        {
+                            "name": "eth1",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        },
+                        {
+                            "name": "eth2",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        }
+                    ],
+                    "med_policies": []
+                },
+                "mef_config": {
+                    "enabled": true,
+                    "unis": [
+                        {
+                            "uni_id": "UNI-CE1",
+                            "uni_type": "UNI-N",
+                            "interface": "eth1",
+                            "bandwidth_profile": {
+                                "cir": 100000,
+                                "cbs": 65536,
+                                "eir": 200000,
+                                "ebs": 131072,
+                                "color_mode": "color-aware",
+                                "coupling_flag": false
+                            },
+                            "cos_mapping": {
+                                "type": "pcp",
+                                "pcp_entries": [
+                                    {
+                                        "pcp": 5,
+                                        "cos_name": "voice",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 4,
+                                        "cos_name": "video",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 3,
+                                        "cos_name": "critical-data",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 2,
+                                        "cos_name": "bulk-data",
+                                        "color": "yellow"
+                                    },
+                                    {
+                                        "pcp": 0,
+                                        "cos_name": "best-effort",
+                                        "color": "green"
+                                    }
+                                ]
+                            },
+                            "service_oam": {
+                                "md_level": 4,
+                                "mep_id": 101,
+                                "ccm_interval": "1s",
+                                "remote_mep_id": 201,
+                                "loopback": true,
+                                "linktrace": true,
+                                "performance_monitoring": true
+                            },
+                            "evc_id": "EVC-L2VPN-1001",
+                            "evc_type": "point-to-point"
+                        }
+                    ]
+                }
+            },
+            "nid2": {
+                "hostname": "nid2",
+                "role": "NID",
+                "router_id": "10.0.2.2",
+                "interfaces": [
+                    {
+                        "name": "eth1",
+                        "description": "uni-c-to-ce4",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.6.1/31",
+                        "type": "physical"
+                    },
+                    {
+                        "name": "eth2",
+                        "description": "nni-to-pe2",
+                        "enabled": true,
+                        "mtu": 9000,
+                        "ipv4": "10.2.8.0/31",
+                        "type": "physical"
+                    }
+                ],
+                "lldp_config": {
+                    "enabled": true,
+                    "tx_interval": 30,
+                    "hold_multiplier": 4,
+                    "reinit_delay": 2,
+                    "tx_delay": 2,
+                    "chassis_id_subtype": "mac-address",
+                    "optional_tlvs": [
+                        "system-name",
+                        "system-description",
+                        "system-capabilities",
+                        "port-description",
+                        "management-address"
+                    ],
+                    "interfaces": [
+                        {
+                            "name": "eth1",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        },
+                        {
+                            "name": "eth2",
+                            "enabled": true,
+                            "transmit": true,
+                            "receive": true
+                        }
+                    ],
+                    "med_policies": []
+                },
+                "mef_config": {
+                    "enabled": true,
+                    "unis": [
+                        {
+                            "uni_id": "UNI-CE4",
+                            "uni_type": "UNI-N",
+                            "interface": "eth1",
+                            "bandwidth_profile": {
+                                "cir": 100000,
+                                "cbs": 65536,
+                                "eir": 200000,
+                                "ebs": 131072,
+                                "color_mode": "color-aware",
+                                "coupling_flag": false
+                            },
+                            "cos_mapping": {
+                                "type": "pcp",
+                                "pcp_entries": [
+                                    {
+                                        "pcp": 5,
+                                        "cos_name": "voice",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 4,
+                                        "cos_name": "video",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 3,
+                                        "cos_name": "critical-data",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "pcp": 2,
+                                        "cos_name": "bulk-data",
+                                        "color": "yellow"
+                                    },
+                                    {
+                                        "pcp": 0,
+                                        "cos_name": "best-effort",
+                                        "color": "green"
+                                    }
+                                ]
+                            },
+                            "service_oam": {
+                                "md_level": 4,
+                                "mep_id": 201,
+                                "ccm_interval": "1s",
+                                "remote_mep_id": 101,
+                                "loopback": true,
+                                "linktrace": true,
+                                "performance_monitoring": true
+                            },
+                            "evc_id": "EVC-L2VPN-1001",
+                            "evc_type": "point-to-point"
+                        }
+                    ]
+                }
+            },
             "ce1": {
                 "hostname": "ce1",
                 "role": "CE",
@@ -11090,10 +11344,10 @@
                     },
                     {
                         "name": "eth1",
-                        "description": "to-pe1-l2vpn",
+                        "description": "to-nid1-uni",
                         "enabled": true,
                         "mtu": 9000,
-                        "ipv4": "10.2.5.1/31",
+                        "ipv4": "10.2.5.0/31",
                         "type": "physical"
                     }
                 ],
@@ -11713,10 +11967,10 @@
                     },
                     {
                         "name": "eth1",
-                        "description": "to-pe2-l2vpn",
+                        "description": "to-nid2-uni",
                         "enabled": true,
                         "mtu": 9000,
-                        "ipv4": "10.2.6.1/31",
+                        "ipv4": "10.2.6.0/31",
                         "type": "physical"
                     }
                 ],
