@@ -19,6 +19,7 @@ interface Props {
 const ALL_ROLES: DeviceRole[] = ["PE", "P", "RR", "ASBR", "AGG", "CE", "PCE", "EXTERNAL"];
 const ALL_LINK_TYPES: LinkType[] = ["core", "edge", "customer", "peering"];
 const ALL_OVERLAYS: OverlayType[] = ["ibgp", "ebgp", "sr-sids", "link-ips", "loopbacks"];
+const CLOUD_OVERLAYS: OverlayType[] = ["cloud-isis", "cloud-bgp", "cloud-vxlan", "cloud-erps", "cloud-l2vpn"];
 
 export default function Sidebar({
   topo,
@@ -165,6 +166,35 @@ export default function Sidebar({
                   style={{
                     backgroundColor: overlayColors[o],
                     opacity: activeOverlays.has(o) ? 1 : 0.3,
+                  }}
+                />
+                {overlayLabels[o]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Domain clouds */}
+        <div className="px-3 py-2 border-b border-gray-800">
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+            Domains
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {CLOUD_OVERLAYS.map((o) => (
+              <button
+                key={o}
+                onClick={() => onToggleOverlay(o)}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors ${
+                  activeOverlays.has(o)
+                    ? "bg-gray-700 text-gray-200"
+                    : "bg-gray-800/50 text-gray-500"
+                }`}
+              >
+                <div
+                  className="w-2.5 h-2.5 rounded-sm"
+                  style={{
+                    backgroundColor: overlayColors[o],
+                    opacity: activeOverlays.has(o) ? 0.5 : 0.2,
                   }}
                 />
                 {overlayLabels[o]}

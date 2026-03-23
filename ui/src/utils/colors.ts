@@ -46,6 +46,11 @@ export const overlayColors: Record<OverlayType, string> = {
   "sr-sids": "#a78bfa",  // violet
   "link-ips": "#94a3b8", // slate
   loopbacks: "#67e8f9",  // cyan
+  "cloud-isis": "#64748b",  // slate-500
+  "cloud-bgp": "#f59e0b",   // amber-500
+  "cloud-vxlan": "#8b5cf6", // violet-500
+  "cloud-erps": "#14b8a6",  // teal-500
+  "cloud-l2vpn": "#06b6d4", // cyan-500
 };
 
 export const overlayLabels: Record<OverlayType, string> = {
@@ -54,6 +59,11 @@ export const overlayLabels: Record<OverlayType, string> = {
   "sr-sids": "SR SIDs",
   "link-ips": "Link IPs",
   loopbacks: "Loopbacks",
+  "cloud-isis": "IS-IS Domain",
+  "cloud-bgp": "BGP Mesh",
+  "cloud-vxlan": "VXLAN VTEPs",
+  "cloud-erps": "G.8032 Ring",
+  "cloud-l2vpn": "L2VPN",
 };
 
 export const nodeRadius: Record<DeviceRole, number> = {

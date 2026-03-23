@@ -13,6 +13,7 @@ import { buildGraph, toConfigKey } from "../utils/graph";
 import type { GraphNode, GraphLink } from "../utils/graph";
 import { roleColors, linkColors, overlayColors } from "../utils/colors";
 import { curvedPath } from "../utils/overlays";
+import { buildCloudGroups, cloudPath, cloudLabelPosition } from "../utils/clouds";
 
 interface Props {
   topo: Topology;
@@ -80,6 +81,31 @@ export default function TopologyGraph({
         setZoomTransform(str);
       });
     svg.call(zoom);
+
+    // --- Domain clouds (rendered first = behind everything) ---
+    const cloudGroups = buildCloudGroups(topo, configs);
+    const cloudGroup = g.append("g").attr("class", "domain-clouds");
+    // Create a <g> per cloud with path + label
+    const cloudElements = cloudGroups.map((cg) => {
+      const cEl = cloudGroup.append("g").attr("class", `cloud-${cg.id}`).attr("opacity", 0);
+      const path = cEl
+        .append("path")
+        .attr("fill", cg.color)
+        .attr("fill-opacity", cg.fillOpacity)
+        .attr("stroke", cg.color)
+        .attr("stroke-opacity", 0.25)
+        .attr("stroke-width", 1.5)
+        .attr("stroke-dasharray", "6,3");
+      const label = cEl
+        .append("text")
+        .text(cg.label)
+        .attr("fill", cg.color)
+        .attr("font-size", "10px")
+        .attr("font-weight", "600")
+        .attr("opacity", 0.5)
+        .style("pointer-events", "none");
+      return { group: cg, path, label };
+    });
 
     // Arrow markers
     const defs = svg.append("defs");
@@ -493,6 +519,20 @@ export default function TopologyGraph({
             .attr("y", sy + dy * 0.7 + ny * off);
         }
 
+        // Update domain cloud shapes
+        for (const ce of cloudElements) {
+          const memberPositions = ce.group.members
+            .map((id) => nodeMap.get(id))
+            .filter((n): n is GraphNode => !!n)
+            .map((n) => ({ x: n.x || 0, y: n.y || 0 }));
+
+          if (memberPositions.length > 0) {
+            ce.path.attr("d", cloudPath(memberPositions, 45));
+            const labelPos = cloudLabelPosition(memberPositions, 45);
+            ce.label.attr("x", labelPos.x).attr("y", labelPos.y);
+          }
+        }
+
         // Report node positions for educational overlay
         if (onNodePosRef.current) {
           const positions = new Map<string, { x: number; y: number }>();
@@ -569,6 +609,13 @@ export default function TopologyGraph({
     svg
       .select(".overlay-loopbacks")
       .attr("opacity", activeOverlays.has("loopbacks") ? 1 : 0);
+
+    // Cloud overlay visibility
+    svg.select(".cloud-isis-domain").attr("opacity", activeOverlays.has("cloud-isis") ? 1 : 0);
+    svg.select(".cloud-bgp-mesh").attr("opacity", activeOverlays.has("cloud-bgp") ? 1 : 0);
+    svg.select(".cloud-vxlan-vteps").attr("opacity", activeOverlays.has("cloud-vxlan") ? 1 : 0);
+    svg.select(".cloud-erps-ring").attr("opacity", activeOverlays.has("cloud-erps") ? 1 : 0);
+    svg.select(".cloud-l2vpn-service").attr("opacity", activeOverlays.has("cloud-l2vpn") ? 1 : 0);
   }, [
     visibleRoles,
     visibleLinkTypes,

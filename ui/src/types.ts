@@ -2,7 +2,9 @@
 
 export type DeviceRole = "PE" | "P" | "RR" | "AGG" | "ASBR" | "CE" | "PCE" | "EXTERNAL";
 export type LinkType = "core" | "edge" | "customer" | "peering";
-export type OverlayType = "ibgp" | "ebgp" | "sr-sids" | "link-ips" | "loopbacks";
+export type OverlayType =
+  | "ibgp" | "ebgp" | "sr-sids" | "link-ips" | "loopbacks"
+  | "cloud-isis" | "cloud-bgp" | "cloud-vxlan" | "cloud-erps" | "cloud-l2vpn";
 
 export interface OverlayLink {
   source: string;
