@@ -129,6 +129,7 @@ export default function App() {
                   scenario={eduState.activeScenario}
                   nodePositions={nodePositions}
                   visible={eduState.showOverlay}
+                  deviceRoles={topo.device_roles}
                 />
                 <DisabledLinkOverlay
                   disabledLinks={eduState.whatIf.disabledLinks}

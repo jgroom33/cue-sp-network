@@ -331,17 +331,6 @@
                 },
                 {
                     "a_end": {
-                        "device": "enni1",
-                        "interface": "eth1"
-                    },
-                    "z_end": {
-                        "device": "enni2",
-                        "interface": "eth1"
-                    },
-                    "type": "peering"
-                },
-                {
-                    "a_end": {
                         "device": "enni2",
                         "interface": "eth2"
                     },

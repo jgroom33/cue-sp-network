@@ -85,8 +85,7 @@ links: [
 	{a_end: {device: "ce4", interface: "eth1"}, z_end: {device: "nid2", interface: "eth1"}, type: "customer"},
 	{a_end: {device: "nid2", interface: "eth2"}, z_end: {device: "pe2", interface: "eth4"}, type: "edge"},
 
-	// === ENNI inter-carrier: PE ↔ ENNI (NNI) ↔ ENNI (peering) ===
+	// === ENNI: PE ↔ ENNI (NNI) — no direct enni1↔enni2 link (inter-carrier boundary) ===
 	{a_end: {device: "pe1", interface: "eth3"}, z_end: {device: "enni1", interface: "eth2"}, type: "edge"},
-	{a_end: {device: "enni1", interface: "eth1"}, z_end: {device: "enni2", interface: "eth1"}, type: "peering"},
 	{a_end: {device: "enni2", interface: "eth2"}, z_end: {device: "pe2", interface: "eth3"}, type: "edge"},
 ]
