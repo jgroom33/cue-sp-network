@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.5.0] - 2026-03-23
+
+### Educational mode promoted to primary view
+
+- Educational mode is now the only view — Devices and Validation tabs removed
+- Sidebar simplified to a pure control panel: Roles, Link Types, Overlays, Domains
+- Removed DevicePanel, ProtocolTabs, ValidationDashboard (1,246 lines of dead code)
+- Removed Protocol Filter dropdown (redundant with domain clouds)
+- Removed device list and search (device interaction via graph directly)
+
+### Domain cloud overlays
+
+- New overlay type: translucent convex-hull background clouds that visually group devices by protocol domain
+- Five clouds: IS-IS Domain (slate), BGP Mesh (amber), VXLAN VTEPs (violet), G.8032 Ring (teal), L2VPN Endpoints (cyan)
+- Clouds compute convex hull of member positions with 45px padding and rounded Bézier corners
+- Toggleable from new "Domains" section in sidebar; layers stack when multiple active
+- New utility: `ui/src/utils/clouds.ts` — Graham scan, hull expansion, SVG path generation
+
+### L2VPN Pseudowire scenario
+
+- New educational scenario: L2VPN VPWS point-to-point pseudowire
+- Shows PW label + transport label stack, control word, transparent L2 frame transport
+- Full CE-to-CE path: ce1 → pe1 → p1 → p2 → p4 → pe2 → ce4 (3 P hops)
+
+### Topology restructure (19 devices, 24 links)
+
+- **P-core diagonal attachment**: PE1 connects to P1 (primary) + P3 (backup metric 50); PE2 connects to P4 (primary) + P2 (backup metric 50). Forces 3-P-hop IGP shortest path across the core
+- **G.8032 ERPS ring**: PE1 → AGG1 → AGG5 → PE1. PE1 is RPL owner (west port blocked), AGG1 is RPL neighbor, AGG5 is transit. Ring protects VLANs 100/200/300 with R-APS on VLAN 4090
+- **New schema**: `schema/erps/` — ITU-T G.8032 ring protection (ring ports, RPL designation, WTR/guard/hold-off timers, sub-ring interconnection)
+- **Added CE1, CE4**: L2VPN pseudowire attachment circuits (CE1↔PE1:eth4, CE4↔PE2:eth4)
+- **Removed CE1 (original), AGG3, AGG4**: Simplified access layer; CE1 repurposed as L2VPN endpoint
+
 ## [0.4.0] - 2026-03-21
 
 ### Educational Network Visualization
