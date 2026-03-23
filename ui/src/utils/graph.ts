@@ -55,14 +55,13 @@ const fixedPositions: Record<string, { x: number; y: number }> = {
   agg1:           { x: 0.32, y: 0.78 },
   agg5:           { x: 0.12, y: 0.72 },
   agg2:           { x: 0.75, y: 0.78 },
-  // NIDs — MEF UNI demarcation (between CEs and PEs)
-  nid1:           { x: 0.12, y: 0.58 },
-  nid2:           { x: 0.88, y: 0.58 },
-  // ENNIs — inter-carrier boundary (lateral between PEs)
-  enni1:          { x: 0.42, y: 0.58 },
-  enni2:          { x: 0.58, y: 0.58 },
-  // CEs — bottom tier (ce2/ce3 via AGGs) and L2VPN CEs via NIDs
-  ce1:            { x: 0.05, y: 0.50 },
+  // NIDs + ENNIs — provider demarcation tier
+  nid1:           { x: 0.10, y: 0.56 },
+  enni1:          { x: 0.18, y: 0.50 },
+  enni2:          { x: 0.82, y: 0.50 },
+  nid2:           { x: 0.90, y: 0.56 },
+  // CEs — customer tier
+  ce1:            { x: 0.03, y: 0.50 },
   ce2:            { x: 0.25, y: 0.92 },
   ce3:            { x: 0.75, y: 0.92 },
   ce4:            { x: 0.95, y: 0.50 },
