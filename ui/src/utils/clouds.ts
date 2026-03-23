@@ -75,12 +75,14 @@ export function buildCloudGroups(
     });
   }
 
-  // L2VPN Service
-  const l2vpnMembers = devicesWith((c) => !!c.l2vpn_config?.enabled);
+  // L2VPN Service (PEs with pseudowires + NIDs with MEF UNI)
+  const l2vpnMembers = devicesWith(
+    (c) => !!c.l2vpn_config?.enabled || !!c.mef_config?.enabled
+  );
   if (l2vpnMembers.length > 0) {
     groups.push({
       id: "l2vpn-service",
-      label: "L2VPN Endpoints",
+      label: "L2VPN Service",
       color: "#06b6d4", // cyan-500
       fillOpacity: 0.08,
       members: l2vpnMembers,
