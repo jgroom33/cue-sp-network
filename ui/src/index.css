@@ -1,1 +1,78 @@
 @import "tailwindcss";
+
+/* ── Packet view animations ─────────────────────────────────────────────
+   All durations derive from --pkt-dur so playback speed scales them.
+   Animations are gated on an ancestor [data-active] so inactive drawer
+   columns stay static; the right panel is always active.                */
+
+@keyframes pkt-enter {
+  from { translate: 0 -14px; scale: 1 0.6; opacity: 0; }
+}
+@keyframes pkt-exit {
+  to { translate: 0 -14px; scale: 1 0.6; opacity: 0; }
+}
+@keyframes pkt-val-in {
+  from { translate: 0 6px; opacity: 0; }
+}
+@keyframes pkt-val-out {
+  to { translate: 0 -6px; opacity: 0; }
+}
+@keyframes pkt-flash {
+  0%   { stroke: #fbbf24; stroke-width: 2; }
+  100% { stroke: var(--pkt-flash-end, transparent); stroke-width: 1; }
+}
+@keyframes pkt-badge {
+  0%   { scale: 0.85; opacity: 0.4; }
+  45%  { scale: 1.12; opacity: 1; }
+  100% { scale: 1; opacity: 1; }
+}
+@keyframes pkt-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+@layer components {
+  :root { --pkt-dur: 350ms; }
+
+  .pkt-svg g { transform-box: fill-box; transform-origin: 50% 0; }
+  .pkt-row   { transition: translate var(--pkt-dur) cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .pkt-col   { transition: opacity 250ms ease; }
+  .pkt-text  {
+    paint-order: stroke fill;
+    stroke: #030712;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    font-variant-numeric: tabular-nums;
+  }
+  .pkt-ghost { pointer-events: none; opacity: 0; }
+  .pkt-drawer { transition: translate 300ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+  [data-active] .pkt-anim-enter {
+    animation: pkt-enter var(--pkt-dur) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  [data-active] .pkt-ghost {
+    opacity: 1;
+    animation: pkt-exit var(--pkt-dur) cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  }
+  [data-active] .pkt-anim-val-in {
+    animation: pkt-val-in var(--pkt-dur) ease-out both;
+  }
+  .pkt-val-out { opacity: 0; }
+  [data-active] .pkt-val-out {
+    opacity: 1;
+    animation: pkt-val-out var(--pkt-dur) ease-in forwards;
+  }
+  [data-active] .pkt-anim-flash {
+    animation: pkt-flash calc(var(--pkt-dur) * 2.2) ease-out both;
+  }
+  [data-active] .pkt-anim-badge {
+    animation: pkt-badge calc(var(--pkt-dur) * 1.5) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .pkt-approaching { animation: pkt-pulse 600ms ease-in-out infinite; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --pkt-dur: 1ms; }
+  .pkt-row, .pkt-col, .pkt-drawer { transition: none; }
+  .pkt-approaching { animation: none; }
+}

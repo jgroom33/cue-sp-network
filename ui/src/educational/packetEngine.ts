@@ -167,6 +167,20 @@ function classifyDscp(
   return { fwdClass: "best-effort", queueId: 0 };
 }
 
+/**
+ * Deterministic, valid, locally-administered unicast MAC for a device or host name.
+ * 02:xx:xx:xx:xx:01 where xx bytes come from an FNV-1a hash of the name.
+ */
+export function deviceMac(name: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < name.length; i++) {
+    h ^= name.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  const b = [(h >>> 24) & 0xff, (h >>> 16) & 0xff, (h >>> 8) & 0xff, h & 0xff];
+  return ["02", ...b.map((x) => x.toString(16).padStart(2, "0")), "01"].join(":");
+}
+
 // Helper: synthetic VPN label (educational approximation)
 function getVpnLabel(_device: string, vpnIndex: number): number {
   return 100001 + vpnIndex;
@@ -232,8 +246,8 @@ function computeSimpleIP(
 
   let currentHeaders: PacketHeaders = {
     ethernet: {
-      srcMac: `00:${path[0].slice(0, 2)}:00:00:00:01`,
-      dstMac: `00:${path[1]?.slice(0, 2) ?? "xx"}:00:00:00:01`,
+      srcMac: deviceMac(path[0]),
+      dstMac: deviceMac(path[1] ?? path[0]),
       etherType: "0x0800",
     },
     ip: {
@@ -277,8 +291,8 @@ function computeSimpleIP(
       actions.push({ type: "ip-lookup", result: `Route to ${headers.ip!.dst} → forward to ${path[i + 1]}` });
       actions.push({ type: "forward", outInterface: iface.egress });
 
-      headers.ethernet!.srcMac = `00:${dev.slice(0, 2)}:00:00:00:01`;
-      headers.ethernet!.dstMac = `00:${path[i + 1]?.slice(0, 2) ?? "xx"}:00:00:00:01`;
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
 
       annotation =
         `Router ${dev} receives the packet on ${iface.ingress || "its interface"}. It: ` +
@@ -339,8 +353,8 @@ function computeL3VPN(
 
   let currentHeaders: PacketHeaders = {
     ethernet: {
-      srcMac: `00:${srcDevice.slice(0, 2)}:00:00:00:01`,
-      dstMac: `00:${path[1]?.slice(0, 2) ?? "xx"}:00:00:00:01`,
+      srcMac: deviceMac(srcDevice),
+      dstMac: deviceMac(path[1] ?? srcDevice),
       etherType: "0x0800",
     },
     ip: {
@@ -389,6 +403,7 @@ function computeL3VPN(
 
       // Push VPN label (bottom of stack)
       const vpnMpls: MplsLabel = {
+        id: "vpn",
         value: vpnLabel,
         ttl: 63,
         tc: qos?.queueId ?? 0,
@@ -399,6 +414,7 @@ function computeL3VPN(
 
       // Push transport label (top of stack)
       const transportMpls: MplsLabel = {
+        id: "transport",
         value: transportLabel,
         ttl: 63,
         tc: qos?.queueId ?? 0,
@@ -408,8 +424,8 @@ function computeL3VPN(
       actions.push({ type: "mpls-push", label: transportMpls });
 
       headers.mpls = [transportMpls, vpnMpls];
-      headers.ethernet!.srcMac = `00:${dev}:00:00:00:01`;
-      headers.ethernet!.dstMac = `00:${path[i + 1]}:00:00:00:01`;
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
       headers.ethernet!.etherType = "0x8847"; // MPLS
 
       annotation =
@@ -445,8 +461,8 @@ function computeL3VPN(
         actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
       }
 
-      headers.ethernet!.srcMac = `00:${dev}:00:00:00:01`;
-      headers.ethernet!.dstMac = `00:${path[i + 1]}:00:00:00:01`;
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
     } else if (role === "PE" && i === egressPeIdx) {
       // Egress PE: pop VPN label, IP lookup, forward to CE
       if (headers.mpls?.length) {
@@ -467,8 +483,8 @@ function computeL3VPN(
         actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
       }
 
-      headers.ethernet!.srcMac = `00:${dev}:00:00:00:01`;
-      headers.ethernet!.dstMac = `00:${path[i + 1] ?? "ce"}:00:00:00:01`;
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
 
       annotation =
         `Egress PE pops the VPN label ${vpnLabel}, performs a VRF route lookup, and forwards the original IP packet toward the destination CE. The MPLS domain is complete — the packet is now plain IP again.`;
@@ -480,8 +496,8 @@ function computeL3VPN(
         actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
       }
       actions.push({ type: "forward", outInterface: iface.egress });
-      headers.ethernet!.srcMac = `00:${dev}:00:00:00:01`;
-      headers.ethernet!.dstMac = `00:${path[i + 1] ?? "ce"}:00:00:00:01`;
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
       annotation =
         "Aggregation switch forwards the IP packet toward the destination CE device.";
     } else if (role === "CE" && i === path.length - 1) {
@@ -561,8 +577,8 @@ function computeL2VPN(
 
   let currentHeaders: PacketHeaders = {
     ethernet: {
-      srcMac: "00:cu:st:aa:00:01",
-      dstMac: "00:cu:st:bb:00:01",
+      srcMac: deviceMac("host-a"),
+      dstMac: deviceMac("host-b"),
       etherType: "0x0800",
     },
     ip: {
@@ -614,7 +630,6 @@ function computeL2VPN(
       if (bt === "all-to-one") {
         actions.push({ type: "qinq-push", svlan: serviceVlan });
         headers.ethernet!.sVlan = serviceVlan;
-        headers.ethernet!.etherType = "0x88a8";
         annotation =
           `Ingress NID (${dev}) — **All-to-One Bundling**: All customer C-VLANs (10, 20, 30) are mapped to a single EVC and tagged with S-VLAN ${serviceVlan}. This is the simplest bundling model — the NID treats the entire port as one service instance regardless of customer VLAN. Bandwidth profiling at CIR ${cirStr} applies to the aggregate traffic.`;
       } else if (bt === "many-to-one") {
@@ -622,7 +637,6 @@ function computeL2VPN(
         actions.push({ type: "cos-map", from: "C-VLAN 30", to: "EVC-B → S-VLAN 200" });
         actions.push({ type: "qinq-push", svlan: serviceVlan });
         headers.ethernet!.sVlan = serviceVlan;
-        headers.ethernet!.etherType = "0x88a8";
         annotation =
           `Ingress NID (${dev}) — **Many-to-One Bundling**: Customer C-VLANs are grouped into two EVCs: VLANs 10+20 → EVC-A (S-VLAN 100), VLAN 30 → EVC-B (S-VLAN 200). This allows differentiated treatment per VLAN group — e.g., voice/video on EVC-A with strict priority, data on EVC-B with weighted-fair queuing. Each EVC can have its own bandwidth profile.`;
       } else if (bt === "one-to-one") {
@@ -631,14 +645,12 @@ function computeL2VPN(
         actions.push({ type: "cos-map", from: "C-VLAN 30", to: "EVC-3 → S-VLAN 300" });
         actions.push({ type: "qinq-push", svlan: serviceVlan });
         headers.ethernet!.sVlan = serviceVlan;
-        headers.ethernet!.etherType = "0x88a8";
         annotation =
           `Ingress NID (${dev}) — **1:1 VLAN Bundling**: Each customer C-VLAN maps to its own dedicated EVC: VLAN 10 → S-VLAN 100, VLAN 20 → S-VLAN 200, VLAN 30 → S-VLAN 300. Maximum isolation — each VLAN gets independent bandwidth profiling, CoS treatment, and OAM monitoring. This is the most granular MEF bundling model.`;
       } else {
         // Default: standard L2VPN pseudowire
         actions.push({ type: "qinq-push", svlan: serviceVlan });
         headers.ethernet!.sVlan = serviceVlan;
-        headers.ethernet!.etherType = "0x88a8";
         annotation =
           `Ingress NID (${dev}) is the provider-owned demarcation device at the customer site (MEF UNI-N). It performs: (1) CoS classification, (2) MEF bandwidth profiling at CIR ${cirStr}, and (3) S-VLAN ${serviceVlan} push for the provider's EVC. Service OAM (Y.1731 CCM) runs between this MEP and the far-end NID.`;
       }
@@ -648,6 +660,7 @@ function computeL2VPN(
       headers.ethernet!.sVlan = undefined;
 
       const pwMpls: MplsLabel = {
+        id: "pw",
         value: pwLabel,
         ttl: 255,
         tc: 0,
@@ -655,6 +668,7 @@ function computeL2VPN(
         purpose: `PW Label (Pseudowire ID ${pwId})`,
       };
       const transportMpls: MplsLabel = {
+        id: "transport",
         value: transportLabel,
         ttl: 63,
         tc: 0,
@@ -667,7 +681,18 @@ function computeL2VPN(
 
       headers.mpls = [transportMpls, pwMpls];
       headers.pseudowire = { pwLabel, controlWord: hasControlWord };
-      headers.ethernet!.etherType = "0x8847";
+      // Customer frame (S-VLAN already popped) rides inside the pseudowire;
+      // a provider Ethernet header carries the MPLS packet across the core.
+      headers.innerEthernet = {
+        srcMac: headers.ethernet!.srcMac,
+        dstMac: headers.ethernet!.dstMac,
+        etherType: "0x0800",
+      };
+      headers.ethernet = {
+        srcMac: deviceMac(dev),
+        dstMac: deviceMac(path[i + 1] ?? dev),
+        etherType: "0x8847",
+      };
 
       annotation =
         `Ingress PE (${dev}) receives the S-VLAN-tagged frame from the NID, pops the service VLAN ${serviceVlan} (the EVC tag stays within the access network), and encapsulates the original frame into a pseudowire. A two-label MPLS stack is pushed: transport label ${transportLabel} (SR-MPLS path to ${egressPe}) and PW label ${pwLabel} (pseudowire service identifier). ${hasControlWord ? "A control word provides sequencing and padding." : ""}`;
@@ -693,8 +718,8 @@ function computeL2VPN(
           `P router ${dev} swaps the transport label. Like L3VPN, the P router has no visibility into the pseudowire — it only processes the top MPLS label. The customer's L2 frame is completely opaque to the core.`;
       }
 
-      headers.ethernet!.srcMac = `00:${dev}:00:00:00:01`;
-      headers.ethernet!.dstMac = `00:${path[i + 1]}:00:00:00:01`;
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
     } else if (role === "PE" && i === egressPeIdx) {
       // Egress PE: pop PW label, push S-VLAN for egress NID
       if (headers.mpls?.length) {
@@ -702,10 +727,14 @@ function computeL2VPN(
       }
       headers.mpls = undefined;
       headers.pseudowire = undefined;
+      // Recover the original customer frame from the pseudowire
+      if (headers.innerEthernet) {
+        headers.ethernet = { ...headers.innerEthernet };
+        headers.innerEthernet = undefined;
+      }
 
       actions.push({ type: "qinq-push", svlan: serviceVlan });
       headers.ethernet!.sVlan = serviceVlan;
-      headers.ethernet!.etherType = "0x88a8";
 
       actions.push({ type: "forward", outInterface: "eth4" });
 
@@ -769,9 +798,9 @@ function computeENNI(
 
   let currentHeaders: PacketHeaders = {
     ethernet: {
-      srcMac: "00:ca:rr:aa:00:01",
-      dstMac: "00:ca:rr:bb:00:01",
-      etherType: "0x88a8",
+      srcMac: deviceMac("partner-a"),
+      dstMac: deviceMac("partner-b"),
+      etherType: "0x0800",
       sVlan: 800, // Partner carrier's S-VLAN
     },
     ip: {
@@ -816,15 +845,24 @@ function computeENNI(
       actions.push({ type: "qinq-pop", svlan: serviceVlan });
       headers.ethernet!.sVlan = undefined;
 
-      const pwMpls: MplsLabel = { value: pwLabel, ttl: 255, tc: 0, bottom: true, purpose: `PW Label (ENNI PW ${pwLabel})` };
-      const transportMpls: MplsLabel = { value: transportLabel, ttl: 63, tc: 0, bottom: false, purpose: `Transport (Node SID ${transportLabel} → ${egressPe})` };
+      const pwMpls: MplsLabel = { id: "pw", value: pwLabel, ttl: 255, tc: 0, bottom: true, purpose: `PW Label (ENNI PW ${pwLabel})` };
+      const transportMpls: MplsLabel = { id: "transport", value: transportLabel, ttl: 63, tc: 0, bottom: false, purpose: `Transport (Node SID ${transportLabel} → ${egressPe})` };
 
       actions.push({ type: "mpls-push", label: pwMpls });
       actions.push({ type: "mpls-push", label: transportMpls });
 
       headers.mpls = [transportMpls, pwMpls];
       headers.pseudowire = { pwLabel, controlWord: true };
-      headers.ethernet!.etherType = "0x8847";
+      headers.innerEthernet = {
+        srcMac: headers.ethernet!.srcMac,
+        dstMac: headers.ethernet!.dstMac,
+        etherType: "0x0800",
+      };
+      headers.ethernet = {
+        srcMac: deviceMac(dev),
+        dstMac: deviceMac(path[i + 1] ?? dev),
+        etherType: "0x8847",
+      };
 
       annotation =
         `Ingress PE (${dev}) pops the S-VLAN ${serviceVlan} from the ENNI access network and encapsulates the frame into a pseudowire for MPLS transport. Transport label ${transportLabel} routes to ${egressPe}, PW label ${pwLabel} identifies the inter-carrier EVC.`;
@@ -843,6 +881,8 @@ function computeENNI(
         actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
         annotation = `P router ${dev} swaps the transport label — no visibility into the ENNI service payload.`;
       }
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
     } else if (role === "PE" && i === egressPeIdx) {
       // Egress PE
       if (headers.mpls?.length) {
@@ -850,10 +890,13 @@ function computeENNI(
       }
       headers.mpls = undefined;
       headers.pseudowire = undefined;
+      if (headers.innerEthernet) {
+        headers.ethernet = { ...headers.innerEthernet };
+        headers.innerEthernet = undefined;
+      }
 
       actions.push({ type: "qinq-push", svlan: serviceVlan });
       headers.ethernet!.sVlan = serviceVlan;
-      headers.ethernet!.etherType = "0x88a8";
 
       annotation =
         `Egress PE (${dev}) pops the PW label and pushes S-VLAN ${serviceVlan} for delivery to the egress NID/ENNI.`;
@@ -916,8 +959,8 @@ function computeVXLAN(
 
   let currentHeaders: PacketHeaders = {
     ethernet: {
-      srcMac: "00:aa:bb:cc:00:01",
-      dstMac: "00:aa:bb:cc:00:02",
+      srcMac: deviceMac("host-a"),
+      dstMac: deviceMac("host-b"),
       etherType: "0x0800",
     },
     ip: {
@@ -951,6 +994,7 @@ function computeVXLAN(
 
       // Also push MPLS transport label for underlay
       const transportMpls: MplsLabel = {
+        id: "transport",
         value: transportLabel,
         ttl: 63,
         tc: 0,
@@ -959,7 +1003,14 @@ function computeVXLAN(
       };
       actions.push({ type: "mpls-push", label: transportMpls });
       headers.mpls = [transportMpls];
-      headers.ethernet!.etherType = "0x8847";
+      // Original customer frame becomes the inner Ethernet; a new provider
+      // Ethernet header carries the MPLS/VXLAN packet hop by hop.
+      headers.innerEthernet = { ...headers.ethernet! };
+      headers.ethernet = {
+        srcMac: deviceMac(dev),
+        dstMac: deviceMac(path[i + 1] ?? dev),
+        etherType: "0x8847",
+      };
 
       annotation =
         `Source VTEP (${dev}) encapsulates the original L2 frame inside a VXLAN header with VNI ${vni}. An outer IP header is added with source VTEP ${srcVtep} and destination VTEP ${dstVtep}. The VXLAN packet is then forwarded via the MPLS underlay with transport label ${transportLabel}.`;
@@ -975,20 +1026,22 @@ function computeVXLAN(
       } else if (headers.mpls?.length) {
         const oldLabel = headers.mpls[0].value;
         actions.push({ type: "mpls-swap", from: oldLabel, to: transportLabel });
-        headers.mpls[0].ttl -= 1;
-        actions.push({
-          type: "ttl-decrement",
-          from: headers.mpls[0].ttl + 1,
-          to: headers.mpls[0].ttl,
-        });
+        headers.mpls[0].value = transportLabel;
+        const oldTtl = headers.mpls[0].ttl;
+        headers.mpls[0].ttl = oldTtl - 1;
+        actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
         annotation =
           "P router performs MPLS label swap for the underlay transport. It has no visibility into the VXLAN-encapsulated payload.";
       }
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
     } else if (i === path.length - 1 && (role === "PE")) {
-      // Destination VTEP: VXLAN decapsulation
+      // Destination VTEP: VXLAN decapsulation — restore the customer frame
       actions.push({ type: "vxlan-decap" });
       headers.vxlan = undefined;
       headers.mpls = undefined;
+      headers.ethernet = headers.innerEthernet ?? headers.ethernet;
+      headers.innerEthernet = undefined;
       headers.ethernet!.etherType = "0x0800";
 
       annotation =
@@ -1034,6 +1087,7 @@ function computeSRTE(
 
   // Build initial MPLS stack from segment list
   const initialStack: MplsLabel[] = segments.map((seg: { type: string; sid: number }, idx: number) => ({
+    id: `sid-${seg.sid}-${idx}`,
     value: 16000 + seg.sid,
     ttl: 64,
     tc: 5,
@@ -1043,8 +1097,8 @@ function computeSRTE(
 
   let currentHeaders: PacketHeaders = {
     ethernet: {
-      srcMac: "00:pe:01:00:00:01",
-      dstMac: "00:p1:00:00:00:01",
+      srcMac: deviceMac(path[0]),
+      dstMac: deviceMac(path[1] ?? path[0]),
       etherType: "0x8847",
     },
     mpls: [...initialStack],
@@ -1089,6 +1143,8 @@ function computeSRTE(
         annotation =
           `Transit node ${dev}: pops its own Node SID (${topLabel}) from the top of the stack. The next segment is now exposed, directing the packet toward the next waypoint. The remaining stack depth is ${headers.mpls?.length ?? 0}.`;
       }
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
     } else {
       // Tail-end: pop last SID, deliver
       if (headers.mpls?.length) {
@@ -1154,8 +1210,8 @@ function computeBGPRR(
 
     const headers: PacketHeaders = {
       ethernet: {
-        srcMac: `00:${dev}:00:00:00:01`,
-        dstMac: `00:${path[i + 1] ?? dev}:00:00:00:01`,
+        srcMac: deviceMac(dev),
+        dstMac: deviceMac(path[i + 1] ?? dev),
         etherType: "0x0800",
       },
       ip: {
@@ -1227,8 +1283,8 @@ function computeInternet(
 
   let currentHeaders: PacketHeaders = {
     ethernet: {
-      srcMac: `00:${path[0].slice(0, 2)}:00:00:00:01`,
-      dstMac: `00:${path[1]?.slice(0, 2) ?? "xx"}:00:00:00:01`,
+      srcMac: deviceMac(path[0]),
+      dstMac: deviceMac(path[1] ?? path[0]),
       etherType: "0x0800",
     },
     ip: {
@@ -1263,6 +1319,7 @@ function computeInternet(
       });
 
       const transportMpls: MplsLabel = {
+        id: "transport",
         value: transportLabel,
         ttl: 63,
         tc: 0,
@@ -1272,6 +1329,8 @@ function computeInternet(
       actions.push({ type: "mpls-push", label: transportMpls });
       headers.mpls = [transportMpls];
       headers.ethernet!.etherType = "0x8847";
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
 
       annotation =
         `Ingress PE looks up the destination in the global routing table. The default route (learned via eBGP from the upstream ISP, reflected by ASBR) points to ${asbr}. A transport label ${transportLabel} is pushed to reach the ASBR via SR-MPLS.`;
@@ -1292,15 +1351,15 @@ function computeInternet(
           from: headers.mpls[0].value,
           to: transportLabel,
         });
-        headers.mpls[0].ttl -= 1;
-        actions.push({
-          type: "ttl-decrement",
-          from: headers.mpls[0].ttl + 1,
-          to: headers.mpls[0].ttl,
-        });
+        headers.mpls[0].value = transportLabel;
+        const oldTtl = headers.mpls[0].ttl;
+        headers.mpls[0].ttl = oldTtl - 1;
+        actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
         annotation =
           "P router performs MPLS label swap, forwarding the packet toward the ASBR.";
       }
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
     } else if (role === "ASBR") {
       // ASBR: MPLS domain ends, eBGP next-hop, forward to ISP
       if (headers.mpls?.length) {
@@ -1317,6 +1376,8 @@ function computeInternet(
         headers.ip.ttl = oldTtl - 1;
         actions.push({ type: "ttl-decrement", from: oldTtl, to: oldTtl - 1 });
       }
+      headers.ethernet!.srcMac = deviceMac(dev);
+      headers.ethernet!.dstMac = deviceMac(path[i + 1] ?? dev);
 
       annotation =
         `ASBR ${dev} is at the AS boundary (AS ${topo.sp_asn} → AS ${topo.upstream_asn}). The MPLS domain terminates here. The ASBR performs an IP lookup and forwards to the eBGP peer (ISP upstream). The next-hop changes from the SP internal address to the peering interface IP.`;

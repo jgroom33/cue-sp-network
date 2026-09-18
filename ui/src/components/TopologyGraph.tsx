@@ -27,6 +27,8 @@ interface Props {
   activeOverlays: Set<OverlayType>;
   onNodePositionsUpdate?: (positions: Map<string, { x: number; y: number }>) => void;
   educationalOverlay?: React.ReactNode;
+  /** Extra bottom offset for the legend (e.g. when the packet drawer is open). */
+  legendBottomOffset?: number;
 }
 
 export default function TopologyGraph({
@@ -41,6 +43,7 @@ export default function TopologyGraph({
   activeOverlays,
   onNodePositionsUpdate,
   educationalOverlay,
+  legendBottomOffset = 0,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -644,7 +647,10 @@ export default function TopologyGraph({
         </svg>
       )}
       {/* Legend */}
-      <div className="absolute bottom-3 left-3 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-lg p-3 text-xs">
+      <div
+        className="absolute left-3 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-lg p-3 text-xs"
+        style={{ bottom: 12 + legendBottomOffset, transition: "bottom 300ms cubic-bezier(0.2, 0.8, 0.2, 1)" }}
+      >
         <div className="font-semibold mb-2 text-gray-300">Roles</div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
           {(Object.entries(roleColors) as [DeviceRole, string][]).map(

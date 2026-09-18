@@ -80,3 +80,25 @@ export const nodeRadius: Record<DeviceRole, number> = {
   PCE: 18,
   EXTERNAL: 16,
 };
+
+/** Protocol layer colors for packet views (vivid on the dark theme). */
+export type ProtocolColorKey =
+  | "eth"
+  | "vlan"
+  | "mpls"
+  | "ip"
+  | "udp"
+  | "vxlan"
+  | "pw"
+  | "payload";
+
+export const protocolColors: Record<ProtocolColorKey, string> = {
+  eth: "#38bdf8",     // sky-400
+  vlan: "#fbbf24",    // amber-400
+  mpls: "#c084fc",    // purple-400
+  ip: "#34d399",      // emerald-400
+  udp: "#fb923c",     // orange-400
+  vxlan: "#818cf8",   // indigo-400
+  pw: "#2dd4bf",      // teal-400
+  payload: "#94a3b8", // slate-400
+};

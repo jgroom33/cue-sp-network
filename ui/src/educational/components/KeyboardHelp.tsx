@@ -9,6 +9,9 @@ const shortcuts: [string, string][] = [
   ["→", "Next hop"],
   ["+/=", "Speed up"],
   ["-", "Slow down"],
+  ["Home / End", "First / last hop"],
+  ["d", "Toggle packet drawer"],
+  ["b", "Toggle hex bytes"],
   ["Esc", "Back to scenarios"],
   ["?", "Toggle this help"],
 ];

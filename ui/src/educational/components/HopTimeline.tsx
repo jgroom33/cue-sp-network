@@ -1,24 +1,19 @@
 import type { PacketState, EducationalAction } from "../types";
+import type { DeviceRole } from "../../types";
+import { roleColors } from "../../utils/colors";
+import { getDeviceRole, roleAbbrev } from "../../utils/roles";
 
 interface Props {
   packetStates: PacketState[];
   currentHop: number;
+  deviceRoles: Record<string, DeviceRole>;
   dispatch: React.Dispatch<EducationalAction>;
 }
-
-const roleColors: Record<string, string> = {
-  CE: "#22c55e",
-  PE: "#3b82f6",
-  P: "#6b7280",
-  RR: "#a855f7",
-  ASBR: "#ef4444",
-  AGG: "#f97316",
-  EXTERNAL: "#ec4899",
-};
 
 export function HopTimeline({
   packetStates,
   currentHop,
+  deviceRoles,
   dispatch,
 }: Props) {
   return (
@@ -27,7 +22,8 @@ export function HopTimeline({
         {packetStates.map((state, i) => {
           const isActive = i === currentHop;
           const isPast = i < currentHop;
-          const color = roleColors[getDeviceRole(state.device)] ?? "#6b7280";
+          const role = getDeviceRole(state.device, deviceRoles);
+          const color = roleColors[role];
 
           return (
             <div key={i} className="flex items-center shrink-0">
@@ -49,7 +45,7 @@ export function HopTimeline({
                   }`}
                   style={{ backgroundColor: color }}
                 >
-                  {state.device.slice(0, 2).toUpperCase()}
+                  {roleAbbrev[role]}
                 </div>
                 <span
                   className={`text-[9px] ${
@@ -72,15 +68,4 @@ export function HopTimeline({
       </div>
     </div>
   );
-}
-
-function getDeviceRole(device: string): string {
-  if (device.startsWith("ce")) return "CE";
-  if (device.startsWith("pe")) return "PE";
-  if (device.startsWith("p") && !device.startsWith("pc")) return "P";
-  if (device.startsWith("rr")) return "RR";
-  if (device.startsWith("asbr")) return "ASBR";
-  if (device.startsWith("agg")) return "AGG";
-  if (device.startsWith("isp")) return "EXTERNAL";
-  return "P";
 }

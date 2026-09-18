@@ -1,11 +1,14 @@
-import { useEffect, useRef, useCallback } from "react";
-import type { AnimationState, ComputedScenario, EducationalAction } from "../types";
+import { useEffect, useRef } from "react";
+import type { AnimationState, ComputedScenario } from "../types";
+import type { AnimationClock } from "../animationClock";
+import { lerp } from "../animationClock";
+import { useClockFrame } from "../hooks/useClockFrame";
 
 interface Props {
   scenario: ComputedScenario;
   animation: AnimationState;
   nodePositions: Map<string, { x: number; y: number }>;
-  dispatch: React.Dispatch<EducationalAction>;
+  clock: AnimationClock;
 }
 
 const QOS_COLORS: Record<string, string> = {
@@ -17,76 +20,48 @@ const QOS_COLORS: Record<string, string> = {
   "best-effort": "#6b7280",
 };
 
+/**
+ * Topology overlay: highlighted path, trail, and the packet token. The token
+ * is positioned imperatively from clock frames (no React render per frame).
+ */
 export function PacketAnimationLayer({
   scenario,
   animation,
   nodePositions,
-  dispatch,
+  clock,
 }: Props) {
-  const animRef = useRef<number>(0);
-  const progressRef = useRef(0);
-  const lastTimeRef = useRef(0);
+  const tokenRef = useRef<SVGGElement>(null);
+  const posRef = useRef(nodePositions);
+  const pathRef = useRef(scenario.path);
+  useEffect(() => {
+    posRef.current = nodePositions;
+    pathRef.current = scenario.path;
+  }, [nodePositions, scenario.path]);
 
   const packetColor =
     QOS_COLORS[scenario.packetStates[animation.currentHop]?.qosClass ?? ""] ??
     "#3b82f6";
 
-  // Animation loop
-  const animate = useCallback(
-    (timestamp: number) => {
-      if (!animation.playing) return;
+  useClockFrame(clock, ({ fromHop, toHop, t }) => {
+    const el = tokenRef.current;
+    if (!el) return;
+    const path = pathRef.current;
+    const a = posRef.current.get(path[fromHop]);
+    const b = posRef.current.get(path[toHop]) ?? a;
+    if (!a || !b) return;
+    el.setAttribute(
+      "transform",
+      `translate(${lerp(a.x, b.x, t)},${lerp(a.y, b.y, t)})`
+    );
+  });
 
-      if (lastTimeRef.current === 0) lastTimeRef.current = timestamp;
-      const dt = timestamp - lastTimeRef.current;
-      lastTimeRef.current = timestamp;
-
-      // Advance progress (speed controls the rate)
-      const hopDuration = 1500 / animation.speed; // ms per hop
-      progressRef.current += dt / hopDuration;
-
-      if (progressRef.current >= 1) {
-        // Move to next hop
-        progressRef.current = 0;
-        const maxHop = scenario.packetStates.length - 1;
-        const nextHop = animation.currentHop + 1;
-        if (nextHop > maxHop) {
-          dispatch({ type: "PAUSE" });
-          return;
-        }
-        dispatch({ type: "SET_HOP", hop: nextHop });
-      }
-
-      dispatch({ type: "SET_PROGRESS", progress: progressRef.current });
-      animRef.current = requestAnimationFrame(animate);
-    },
-    [animation.playing, animation.speed, animation.currentHop, scenario, dispatch]
-  );
-
+  // Node dragged / layout changed: re-place the token from the last frame
   useEffect(() => {
-    if (animation.playing) {
-      lastTimeRef.current = 0;
-      progressRef.current = 0;
-      animRef.current = requestAnimationFrame(animate);
-    }
-    return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-    };
-  }, [animation.playing, animate]);
+    clock.refresh();
+  }, [clock, nodePositions]);
 
-  // Get packet position (interpolated between current and next hop)
-  const currentDevice = scenario.path[animation.currentHop];
-  const nextDevice = scenario.path[animation.currentHop + 1];
-  const currentPos = nodePositions.get(currentDevice);
-  const nextPos = nextDevice ? nodePositions.get(nextDevice) : currentPos;
-
+  const currentPos = nodePositions.get(scenario.path[animation.currentHop]);
   if (!currentPos) return null;
-
-  const x = nextPos
-    ? currentPos.x + (nextPos.x - currentPos.x) * animation.progress
-    : currentPos.x;
-  const y = nextPos
-    ? currentPos.y + (nextPos.y - currentPos.y) * animation.progress
-    : currentPos.y;
 
   // Build trail positions (previous hops)
   const trail: { x: number; y: number; opacity: number }[] = [];
@@ -100,17 +75,6 @@ export function PacketAnimationLayer({
 
   return (
     <g className="packet-animation-layer">
-      {/* SVG filter for glow effect */}
-      <defs>
-        <filter id="packet-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
       {/* Active path highlighting */}
       {scenario.pathLinks.map((link, i) => {
         const src = nodePositions.get(link.source);
@@ -148,31 +112,25 @@ export function PacketAnimationLayer({
         />
       ))}
 
-      {/* Packet dot */}
-      <circle
-        cx={x}
-        cy={y}
-        r={8}
-        fill={packetColor}
-        stroke="white"
-        strokeWidth={2}
+      {/* Packet token — transform written by the clock */}
+      <g
+        ref={tokenRef}
+        transform={`translate(${currentPos.x},${currentPos.y})`}
         filter="url(#packet-glow)"
-        style={{ transition: animation.playing ? "none" : "cx 0.3s, cy 0.3s" }}
-      />
-
-      {/* Packet inner icon */}
-      <text
-        x={x}
-        y={y + 1}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill="white"
-        fontSize={8}
-        fontWeight="bold"
-        pointerEvents="none"
       >
-        P
-      </text>
+        <circle r={8} fill={packetColor} stroke="white" strokeWidth={2} />
+        <text
+          y={1}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="white"
+          fontSize={8}
+          fontWeight="bold"
+          pointerEvents="none"
+        >
+          P
+        </text>
+      </g>
     </g>
   );
 }

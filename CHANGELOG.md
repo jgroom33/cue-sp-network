@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0] - 2026-09-17
+
+### Wireshark-style packet views
+
+- **Packet flow drawer** — a collapsible glass drawer over the bottom of the topology shows every hop side by side: a hop chain (role-colored nodes, ingress/egress interfaces) with one SVG packet per hop underneath and diff badges between columns (`+MPLS 16002`, `PHP −MPLS 16002`, `swap 16002→16002`, `+S-VLAN 100`, `MPLS TTL 63→62`, `VXLAN encap VNI 10100`, `MAC rewrite`). The active hop is centered automatically; a Follow chip re-centers after manual scrolling. Toggle with `d`
+- **RFC-style packet SVG** — each layer is drawn as 32-bit rows with proportional bit fields (Ethernet II, 802.1ad S-TAG, MPLS label entries, IPv4 with a computed header checksum, UDP + VXLAN, pseudowire control word, inner Ethernet, payload). The right panel shows the active hop at full size with a bit ruler; drawer columns collapse untouched layers to one-line strips so the changed layers stand out
+- **Hex bytes pane** — Wireshark-style offset / hex / ASCII dump serialized from the real field values, bytes colored by layer, changed bytes emphasized, hover linked to the packet fields. Toggle with `b`
+- **Animations** — pushed layers slide in with a glow, popped layers collapse out, swapped labels crossfade, TTL/DSCP tick with a flash, badges pop when their hop becomes active; a packet token travels the drawer's hop chain in sync with the topology token. All durations scale with playback speed and respect `prefers-reduced-motion`
+- **Zero per-frame React renders** — sub-hop playback time moved out of the reducer into a small animation clock; tokens are positioned from clock frames via refs. `SET_PROGRESS` removed
+- **Engine realism** — deterministic valid MAC addresses per device, stable MPLS label ids (so PHP diffs as "transport removed" rather than "every label changed"), inner vs outer Ethernet for VXLAN and pseudowire scenarios (customer MACs are now preserved through the core as the annotations describe), TPID no longer written into the EtherType on S-VLAN push
+- **Keyboard** — `Home`/`End` jump to first/last hop, `d` toggles the drawer, `b` toggles bytes
+- **Tests** — 51 new Vitest cases: known-answer byte serialization incl. checksum, layer ordering/lengths, action-driven diffs, SVG grid geometry, drawer scroll math, and an integration run of every scenario through the new pipeline
+
 ## [0.5.1] - 2026-03-23
 
 ### Educational onboarding
