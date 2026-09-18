@@ -44,7 +44,7 @@ CUE schemas define the network model. `export-data.sh` evaluates and exports to 
 
 ## Quick Start
 
-**Prerequisites**: Node.js 20+. CUE CLI is optional (only needed if modifying the network model).
+**Prerequisites**: Node.js 22 (what CI uses; 20+ works). CUE CLI is optional (only needed if modifying the network model).
 
 ```bash
 cd ui
