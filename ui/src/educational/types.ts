@@ -1,6 +1,7 @@
 // Educational mode types for packet flow visualization
 
 export interface MplsLabel {
+  id: string; // stable identity across hops: "transport", "vpn", "pw", "sid-<n>"
   value: number;
   ttl: number;
   tc: number;
@@ -14,6 +15,13 @@ export interface PacketHeaders {
     dstMac: string;
     etherType: string;
     sVlan?: number;
+    cVlan?: number;
+  };
+  /** Customer (inner) frame when the packet is tunnelled (VXLAN / pseudowire). */
+  innerEthernet?: {
+    srcMac: string;
+    dstMac: string;
+    etherType: string;
     cVlan?: number;
   };
   mpls?: MplsLabel[];
@@ -106,7 +114,6 @@ export interface AnimationState {
   playing: boolean;
   currentHop: number;
   speed: AnimationSpeed;
-  progress: number; // 0-1, interpolation between hops
 }
 
 export interface WhatIfState {
@@ -120,6 +127,8 @@ export interface EducationalState {
   whatIf: WhatIfState;
   showQoS: boolean;
   showOverlay: boolean;
+  drawerOpen: boolean;
+  showBytes: boolean;
 }
 
 export type EducationalAction =
@@ -130,11 +139,12 @@ export type EducationalAction =
   | { type: "STEP_BACKWARD" }
   | { type: "SET_HOP"; hop: number }
   | { type: "SET_SPEED"; speed: AnimationSpeed }
-  | { type: "SET_PROGRESS"; progress: number }
   | { type: "TOGGLE_LINK"; linkKey: string }
   | { type: "TOGGLE_WHAT_IF" }
   | { type: "TOGGLE_QOS" }
   | { type: "TOGGLE_OVERLAY" }
+  | { type: "TOGGLE_DRAWER" }
+  | { type: "TOGGLE_BYTES" }
   | { type: "RESET" };
 
 export function educationalReducer(
@@ -146,7 +156,7 @@ export function educationalReducer(
       return {
         ...state,
         activeScenario: action.scenario,
-        animation: { playing: false, currentHop: 0, speed: 1, progress: 0 },
+        animation: { ...state.animation, playing: false, currentHop: 0 },
       };
     case "PLAY":
       return { ...state, animation: { ...state.animation, playing: true } };
@@ -159,30 +169,25 @@ export function educationalReducer(
       const next = Math.min(state.animation.currentHop + 1, maxHop);
       return {
         ...state,
-        animation: { ...state.animation, currentHop: next, progress: 0, playing: false },
+        animation: { ...state.animation, currentHop: next, playing: false },
       };
     }
     case "STEP_BACKWARD": {
       const prev = Math.max(state.animation.currentHop - 1, 0);
       return {
         ...state,
-        animation: { ...state.animation, currentHop: prev, progress: 0, playing: false },
+        animation: { ...state.animation, currentHop: prev, playing: false },
       };
     }
     case "SET_HOP":
       return {
         ...state,
-        animation: { ...state.animation, currentHop: action.hop, progress: 0 },
+        animation: { ...state.animation, currentHop: action.hop },
       };
     case "SET_SPEED":
       return {
         ...state,
         animation: { ...state.animation, speed: action.speed },
-      };
-    case "SET_PROGRESS":
-      return {
-        ...state,
-        animation: { ...state.animation, progress: action.progress },
       };
     case "TOGGLE_LINK": {
       const newDisabled = new Set(state.whatIf.disabledLinks);
@@ -205,6 +210,10 @@ export function educationalReducer(
       return { ...state, showQoS: !state.showQoS };
     case "TOGGLE_OVERLAY":
       return { ...state, showOverlay: !state.showOverlay };
+    case "TOGGLE_DRAWER":
+      return { ...state, drawerOpen: !state.drawerOpen };
+    case "TOGGLE_BYTES":
+      return { ...state, showBytes: !state.showBytes };
     case "RESET":
       return initialEducationalState;
     default:
@@ -214,8 +223,10 @@ export function educationalReducer(
 
 export const initialEducationalState: EducationalState = {
   activeScenario: null,
-  animation: { playing: false, currentHop: 0, speed: 1, progress: 0 },
+  animation: { playing: false, currentHop: 0, speed: 1 },
   whatIf: { disabledLinks: new Set(), active: false },
   showQoS: false,
   showOverlay: true,
+  drawerOpen: true,
+  showBytes: false,
 };

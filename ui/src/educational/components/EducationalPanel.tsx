@@ -6,7 +6,8 @@ import { ScenarioSelector } from "./ScenarioSelector";
 import { HopTimeline } from "./HopTimeline";
 import { AnimationControls } from "./AnimationControls";
 import { PacketInspector } from "./PacketInspector";
-import { HeaderStackDiagram } from "./HeaderStackDiagram";
+import { PacketView } from "./packet/PacketView";
+import type { HopModel } from "../packetModels";
 import { QoSPipelineView } from "./QoSPipelineView";
 import { WhatIfControls } from "./WhatIfControls";
 import { KeyboardHelp } from "./KeyboardHelp";
@@ -15,10 +16,11 @@ interface Props {
   topo: Topology;
   configs: Record<string, Device>;
   state: EducationalState;
+  models: HopModel[] | null;
   dispatch: React.Dispatch<EducationalAction>;
 }
 
-export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
+export function EducationalPanel({ topo, configs, state, models, dispatch }: Props) {
   const { activeScenario, animation, whatIf, showQoS } = state;
   const [showHelp, setShowHelp] = useState<boolean>(false);
 
@@ -94,6 +96,22 @@ export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
               dispatch({ type: "SET_SPEED", speed: speeds[idx - 1] });
           }
           break;
+        case "Home":
+          e.preventDefault();
+          dispatch({ type: "SET_HOP", hop: 0 });
+          break;
+        case "End":
+          e.preventDefault();
+          dispatch({ type: "SET_HOP", hop: activeScenario.packetStates.length - 1 });
+          break;
+        case "d":
+        case "D":
+          dispatch({ type: "TOGGLE_DRAWER" });
+          break;
+        case "b":
+        case "B":
+          dispatch({ type: "TOGGLE_BYTES" });
+          break;
         case "Escape":
           if (showHelp) {
             setShowHelp(false);
@@ -121,10 +139,6 @@ export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
   }
 
   const currentState = activeScenario.packetStates[animation.currentHop];
-  const previousState =
-    animation.currentHop > 0
-      ? activeScenario.packetStates[animation.currentHop - 1]
-      : undefined;
 
   const maxHop = activeScenario.packetStates.length - 1;
 
@@ -189,6 +203,7 @@ export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
       <HopTimeline
         packetStates={activeScenario.packetStates}
         currentHop={animation.currentHop}
+        deviceRoles={topo.device_roles}
         dispatch={dispatch}
       />
 
@@ -199,16 +214,16 @@ export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
             {/* Packet Inspector (actions + annotation) */}
             <PacketInspector state={currentState} />
 
-            {/* Header Stack Diagram */}
-            <div className="px-3 py-2 border-b border-gray-700">
-              <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                Packet Headers
-              </h4>
-              <HeaderStackDiagram
-                headers={currentState.headers}
-                previousHeaders={previousState?.headers}
+            {/* Packet (RFC grid + optional bytes) */}
+            {models?.[animation.currentHop] && (
+              <PacketView
+                model={models[animation.currentHop]}
+                hop={animation.currentHop}
+                showBytes={state.showBytes}
+                speed={animation.speed}
+                onToggleBytes={() => dispatch({ type: "TOGGLE_BYTES" })}
               />
-            </div>
+            )}
 
             {/* QoS Pipeline (togglable) */}
             {showQoS && (
@@ -240,6 +255,8 @@ export function EducationalPanel({ topo, configs, state, dispatch }: Props) {
         <span>Space: play/pause</span>
         <span>←→: step</span>
         <span>+−: speed</span>
+        <span>d: drawer</span>
+        <span>b: bytes</span>
         <span>Esc: back</span>
         <span>?: help</span>
       </div>

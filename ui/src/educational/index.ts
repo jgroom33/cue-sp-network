@@ -3,3 +3,8 @@ export { PacketAnimationLayer } from "./components/PacketAnimationLayer";
 export { ServiceOverlay, DisabledLinkOverlay } from "./components/ServiceOverlay";
 export { educationalReducer, initialEducationalState } from "./types";
 export type { EducationalState, EducationalAction, ComputedScenario } from "./types";
+export { PacketFlowDrawer } from "./components/packet/PacketFlowDrawer";
+export { PacketDefs } from "./components/packet/PacketDefs";
+export { derivePacketModels } from "./packetModels";
+export type { HopModel } from "./packetModels";
+export { drawerHeight } from "./drawerLayout";

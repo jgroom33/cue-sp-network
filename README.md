@@ -13,7 +13,8 @@
 ## Features
 
 - Animated packet flow tracing across multi-hop paths
-- Header stack diagram showing encapsulation at each hop
+- Wireshark-style SVG packet views: RFC 32-bit header grids with proportional bit fields, drawn for every hop side by side under the hop chain, with animated push/pop/swap transitions and diff badges between hops
+- Hex bytes pane encoded from the real header values (Ethernet, 802.1ad, MPLS, IPv4, UDP/VXLAN, PW control word) with an IPv4 checksum
 - QoS pipeline visualization
 - What-If link failure simulation
 - Domain cloud overlays (SP core, access, data center, MEF)
@@ -117,6 +118,10 @@ agent_rfc/
 | `Left Arrow` | Step backward |
 | `Right Arrow` | Step forward |
 | `+` / `-` | Increase / Decrease speed |
+| `Home` / `End` | Jump to first / last hop |
+| `d` | Toggle the side-by-side packet drawer |
+| `b` | Toggle the hex bytes pane |
+| `?` | Keyboard shortcut help |
 | `Esc` | Return to scenario list |
 
 ---

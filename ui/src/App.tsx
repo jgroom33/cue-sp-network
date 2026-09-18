@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo, useReducer } from "react";
+import { createAnimationClock } from "./educational/animationClock";
+import { useAnimationDriver } from "./educational/hooks/useAnimationDriver";
 import { useNetworkData } from "./hooks/useNetworkData";
 import type { DeviceRole, LinkType, OverlayType } from "./types";
 import { buildOverlayData } from "./utils/overlays";
@@ -9,8 +11,12 @@ import {
   PacketAnimationLayer,
   ServiceOverlay,
   DisabledLinkOverlay,
+  PacketFlowDrawer,
+  PacketDefs,
   educationalReducer,
   initialEducationalState,
+  derivePacketModels,
+  drawerHeight,
 } from "./educational";
 
 const ALL_ROLES = new Set<DeviceRole>(["PE", "P", "RR", "ASBR", "AGG", "CE", "NID", "PCE", "EXTERNAL"]);
@@ -24,6 +30,17 @@ export default function App() {
   const [activeOverlays, setActiveOverlays] = useState<Set<OverlayType>>(new Set());
   const [eduState, eduDispatch] = useReducer(educationalReducer, initialEducationalState);
   const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map());
+  const clock = useMemo(() => createAnimationClock(), []);
+  const maxHop = eduState.activeScenario
+    ? eduState.activeScenario.packetStates.length - 1
+    : 0;
+  useAnimationDriver(clock, {
+    playing: eduState.animation.playing,
+    speed: eduState.animation.speed,
+    currentHop: eduState.animation.currentHop,
+    maxHop,
+    dispatch: eduDispatch,
+  });
 
   const toggleRole = useCallback((role: DeviceRole) => {
     setVisibleRoles((prev) => {
@@ -57,6 +74,11 @@ export default function App() {
       eduState.activeScenario
         ? new Set(eduState.activeScenario.path)
         : null,
+    [eduState.activeScenario]
+  );
+
+  const packetModels = useMemo(
+    () => (eduState.activeScenario ? derivePacketModels(eduState.activeScenario) : null),
     [eduState.activeScenario]
   );
 
@@ -95,6 +117,7 @@ export default function App() {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-950">
+      <PacketDefs />
       {/* Sidebar — topology controls */}
       <div className="w-64 flex-shrink-0 flex flex-col">
         <Sidebar
@@ -122,6 +145,7 @@ export default function App() {
           overlayData={overlayData!}
           activeOverlays={activeOverlays}
           onNodePositionsUpdate={setNodePositions}
+          legendBottomOffset={eduState.activeScenario ? drawerHeight(eduState.drawerOpen) : 0}
           educationalOverlay={
             eduState.activeScenario ? (
               <>
@@ -139,12 +163,24 @@ export default function App() {
                   scenario={eduState.activeScenario}
                   animation={eduState.animation}
                   nodePositions={nodePositions}
-                  dispatch={eduDispatch}
+                  clock={clock}
                 />
               </>
             ) : undefined
           }
         />
+        {eduState.activeScenario && packetModels && (
+          <PacketFlowDrawer
+            scenario={eduState.activeScenario}
+            models={packetModels}
+            deviceRoles={topo.device_roles}
+            currentHop={eduState.animation.currentHop}
+            speed={eduState.animation.speed}
+            open={eduState.drawerOpen}
+            clock={clock}
+            dispatch={eduDispatch}
+          />
+        )}
       </div>
 
       {/* Educational panel — always visible */}
@@ -153,6 +189,7 @@ export default function App() {
           topo={topo}
           configs={device_configs}
           state={eduState}
+          models={packetModels}
           dispatch={eduDispatch}
         />
       </div>

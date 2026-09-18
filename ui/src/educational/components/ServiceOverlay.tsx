@@ -35,8 +35,8 @@ export function ServiceOverlay({ scenario, nodePositions, visible, deviceRoles }
   const isEnni = scenario.definition.id.startsWith("mef-enni");
 
   // For ENNI: split cloud into two carrier domains
-  let carrierACoreDevs: string[] = [];
-  let carrierBCoreDevs: string[] = [];
+  const carrierACoreDevs: string[] = [];
+  const carrierBCoreDevs: string[] = [];
   if (isEnni && deviceRoles) {
     // Find the ENNI boundary — devices before the mid-P-core go to A, after to B
     const pathRoles = scenario.path.map((d) => ({ dev: d, role: deviceRoles[d] ?? "" }));

@@ -49,7 +49,7 @@ function makeTopo(
 ): Topology {
   return {
     devices,
-    device_roles: Object.fromEntries(devices.map((d) => [d, "PE"])) as any,
+    device_roles: Object.fromEntries(devices.map((d) => [d, "PE" as const])),
     links: links.map((l) => ({
       a_end: { device: l.a, interface: l.aIf },
       z_end: { device: l.z, interface: l.zIf },
