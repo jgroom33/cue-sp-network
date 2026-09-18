@@ -198,7 +198,7 @@ function computePacketStates(
 ): PacketState[] {
   switch (scenario.id) {
     case "simple-ip-forwarding":
-      return computeSimpleIP(scenario, pathResult, topo, configs);
+      return computeSimpleIP(scenario, pathResult, topo);
     case "l3vpn-ce-to-ce":
       return computeL3VPN(scenario, pathResult, topo, configs);
     case "l2vpn-pseudowire":
@@ -214,7 +214,7 @@ function computePacketStates(
     case "sr-te-low-latency":
       return computeSRTE(scenario, pathResult, topo, configs);
     case "bgp-route-reflection":
-      return computeBGPRR(scenario, pathResult, topo, configs);
+      return computeBGPRR(scenario, pathResult, topo);
     case "tilfa-failover":
       return computeL3VPN(scenario, pathResult, topo, configs); // Same as L3VPN with different path
     case "internet-transit":
@@ -234,8 +234,7 @@ function deepCloneHeaders(h: PacketHeaders): PacketHeaders {
 function computeSimpleIP(
   scenario: ScenarioDefinition,
   pathResult: PathResult,
-  topo: Topology,
-  _configs: Record<string, Device>
+  topo: Topology
 ): PacketState[] {
   const { path, interfaces } = pathResult;
   const states: PacketState[] = [];
@@ -1188,8 +1187,7 @@ function getSidDeviceName(
 function computeBGPRR(
   _scenario: ScenarioDefinition,
   pathResult: PathResult,
-  topo: Topology,
-  _configs: Record<string, Device>
+  topo: Topology
 ): PacketState[] {
   const { path, interfaces } = pathResult;
   const states: PacketState[] = [];

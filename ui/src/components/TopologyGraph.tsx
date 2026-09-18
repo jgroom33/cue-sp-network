@@ -49,11 +49,13 @@ export default function TopologyGraph({
   const containerRef = useRef<HTMLDivElement>(null);
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
   const onSelectRef = useRef(onSelectDevice);
-  onSelectRef.current = onSelectDevice;
   const selectedRef = useRef(selectedDevice);
-  selectedRef.current = selectedDevice;
   const onNodePosRef = useRef(onNodePositionsUpdate);
-  onNodePosRef.current = onNodePositionsUpdate;
+  useEffect(() => {
+    onSelectRef.current = onSelectDevice;
+    selectedRef.current = selectedDevice;
+    onNodePosRef.current = onNodePositionsUpdate;
+  }, [onSelectDevice, selectedDevice, onNodePositionsUpdate]);
   const [zoomTransform, setZoomTransform] = useState("translate(0,0) scale(1)");
   const zoomTransformRef = useRef("translate(0,0) scale(1)");
 
