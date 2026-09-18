@@ -5,27 +5,29 @@ import { getDeviceRole, roleAbbrev } from "../../../utils/roles";
 import type { AnimationClock } from "../../animationClock";
 import { lerp } from "../../animationClock";
 import { useClockFrame } from "../../hooks/useClockFrame";
-import { CHAIN_H, NODE_R, columnCenterX, totalWidth } from "../../drawerLayout";
+import { CHAIN_H, NODE_R, type DrawerLayout } from "../../drawerLayout";
 import type { PacketState } from "../../types";
 
 interface Props {
   states: PacketState[];
   deviceRoles: Record<string, DeviceRole>;
   currentHop: number;
-  hasOrigin: boolean;
+  layout: DrawerLayout;
   clock: AnimationClock;
   onSelectHop: (hop: number) => void;
 }
 
 const NODE_Y = 24;
+const IFACE_FONT = 9.5;
+const IFACE_FILL = "#9ca3af";
 
 /** The hop chain drawn above the packet columns, aligned by shared geometry. */
-export function NodeChain({ states, deviceRoles, currentHop, hasOrigin, clock, onSelectHop }: Props) {
+export function NodeChain({ states, deviceRoles, currentHop, layout, clock, onSelectHop }: Props) {
   const tokenRef = useRef<SVGGElement>(null);
   const ringRefs = useRef<(SVGCircleElement | null)[]>([]);
   const n = states.length;
-  const width = totalWidth(n, hasOrigin);
-  const cx = (i: number) => columnCenterX(i, hasOrigin);
+  const width = layout.totalWidth;
+  const cx = (i: number) => layout.columnCenterX(i);
 
   useClockFrame(clock, ({ fromHop, toHop, t }) => {
     const el = tokenRef.current;
@@ -68,18 +70,18 @@ export function NodeChain({ states, deviceRoles, currentHop, hasOrigin, clock, o
                   pointerEvents="none">
               {roleAbbrev[role]}
             </text>
-            <text x={x} y={NODE_Y + NODE_R + 12} textAnchor="middle" fontSize={10.5}
+            <text x={x} y={NODE_Y + NODE_R + 13} textAnchor="middle" fontSize={11}
                   fontWeight={isActive ? 700 : 500} fill={isActive ? "#fff" : "#9ca3af"} pointerEvents="none">
               {st.device}
             </text>
             {st.ingressInterface && (
-              <text x={x - NODE_R - 5} y={NODE_Y - 6} textAnchor="end" fontSize={8.5} fill="#6b7280"
+              <text x={x - NODE_R - 5} y={NODE_Y - 6} textAnchor="end" fontSize={IFACE_FONT} fill={IFACE_FILL}
                     fontFamily="ui-monospace, monospace" pointerEvents="none">
                 in {st.ingressInterface}
               </text>
             )}
             {st.egressInterface && (
-              <text x={x + NODE_R + 5} y={NODE_Y - 6} textAnchor="start" fontSize={8.5} fill="#6b7280"
+              <text x={x + NODE_R + 5} y={NODE_Y - 6} textAnchor="start" fontSize={IFACE_FONT} fill={IFACE_FILL}
                     fontFamily="ui-monospace, monospace" pointerEvents="none">
                 out {st.egressInterface}
               </text>

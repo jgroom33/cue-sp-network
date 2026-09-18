@@ -40,7 +40,7 @@
   .pkt-text  {
     paint-order: stroke fill;
     stroke: #030712;
-    stroke-width: 3px;
+    stroke-width: 0.22em; /* scales with the text size */
     stroke-linejoin: round;
     font-variant-numeric: tabular-nums;
   }

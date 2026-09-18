@@ -54,12 +54,6 @@ npm run dev
 
 The dev server starts at `http://localhost:5173`.
 
-**Enable Git hooks** (auto-rebuilds `docs/` on commit when `ui/src/` changes):
-
-```bash
-git config core.hooksPath hooks
-```
-
 **Rebuilding network data** (only if you change CUE definitions):
 
 ```bash
@@ -86,7 +80,19 @@ agent_rfc/
 │   │   └── utils/       # Helpers and data transforms
 │   ├── package.json
 │   └── vite.config.ts
-└── docs/                # Additional documentation
+└── .github/workflows/   # CI: lint, test, build, deploy to GitHub Pages
+```
+
+---
+
+## Deployment
+
+The site is built and published by GitHub Actions (`.github/workflows/pages.yml`). Every push and pull request runs lint, tests and a production build; pushes to `main` also deploy `ui/dist` to GitHub Pages. Nothing generated is committed. To build locally:
+
+```bash
+cd ui
+npm run build      # output in ui/dist
+npm run preview
 ```
 
 ---
@@ -120,7 +126,10 @@ agent_rfc/
 | `+` / `-` | Increase / Decrease speed |
 | `Home` / `End` | Jump to first / last hop |
 | `d` | Toggle the side-by-side packet drawer |
-| `b` | Toggle the hex bytes pane |
+| `[` / `]` | Packet drawer size (small / medium / large); `Ctrl`+wheel inside the drawer does the same |
+| `e` | Expand the active hop in the drawer to full size |
+| `c` | Drawer shows only the layers each hop changes |
+| `b` | Toggle the hex bytes pane (right panel, and under the active hop in the drawer) |
 | `?` | Keyboard shortcut help |
 | `Esc` | Return to scenario list |
 

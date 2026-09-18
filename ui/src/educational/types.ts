@@ -1,4 +1,7 @@
 // Educational mode types for packet flow visualization
+import { DRAWER_DEFAULT_H } from "./drawerLayout";
+import { loadDrawerPrefs } from "./drawerPrefs";
+import { stepSize, type PacketSize } from "./packetSvgLayout";
 
 export interface MplsLabel {
   id: string; // stable identity across hops: "transport", "vpn", "pw", "sid-<n>"
@@ -129,6 +132,10 @@ export interface EducationalState {
   showOverlay: boolean;
   drawerOpen: boolean;
   showBytes: boolean;
+  drawerSize: PacketSize; // density of the drawer columns
+  drawerHeight: number; // drawer body height in px (excludes the handle)
+  drawerExpand: boolean; // render the active hop at full size
+  drawerDiffOnly: boolean; // hide layers untouched at each hop
 }
 
 export type EducationalAction =
@@ -145,6 +152,12 @@ export type EducationalAction =
   | { type: "TOGGLE_OVERLAY" }
   | { type: "TOGGLE_DRAWER" }
   | { type: "TOGGLE_BYTES" }
+  | { type: "SET_DRAWER_SIZE"; size: PacketSize }
+  | { type: "STEP_DRAWER_SIZE"; dir: 1 | -1 }
+  | { type: "SET_DRAWER_HEIGHT"; height: number }
+  | { type: "RESET_DRAWER_HEIGHT" }
+  | { type: "TOGGLE_DRAWER_EXPAND" }
+  | { type: "TOGGLE_DRAWER_DIFF_ONLY" }
   | { type: "RESET" };
 
 export function educationalReducer(
@@ -214,6 +227,18 @@ export function educationalReducer(
       return { ...state, drawerOpen: !state.drawerOpen };
     case "TOGGLE_BYTES":
       return { ...state, showBytes: !state.showBytes };
+    case "SET_DRAWER_SIZE":
+      return { ...state, drawerSize: action.size };
+    case "STEP_DRAWER_SIZE":
+      return { ...state, drawerSize: stepSize(state.drawerSize, action.dir) };
+    case "SET_DRAWER_HEIGHT":
+      return { ...state, drawerHeight: action.height };
+    case "RESET_DRAWER_HEIGHT":
+      return { ...state, drawerHeight: DRAWER_DEFAULT_H, drawerOpen: true };
+    case "TOGGLE_DRAWER_EXPAND":
+      return { ...state, drawerExpand: !state.drawerExpand };
+    case "TOGGLE_DRAWER_DIFF_ONLY":
+      return { ...state, drawerDiffOnly: !state.drawerDiffOnly };
     case "RESET":
       return initialEducationalState;
     default:
@@ -229,4 +254,12 @@ export const initialEducationalState: EducationalState = {
   showOverlay: true,
   drawerOpen: true,
   showBytes: false,
+  drawerSize: "drawer",
+  drawerHeight: DRAWER_DEFAULT_H,
+  drawerExpand: true,
+  drawerDiffOnly: false,
+  ...(() => {
+    const p = loadDrawerPrefs();
+    return { ...(p.size ? { drawerSize: p.size } : {}), ...(p.height ? { drawerHeight: p.height } : {}) };
+  })(),
 };

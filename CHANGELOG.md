@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.0] - 2026-09-18
+
+### Packet drawer readability and exploration
+
+- **Legible by default** — drawer packets now render at 9.5px on a 240px grid (was 7.5px / 192px), the text halo scales with the font instead of a fixed 3px stroke, layer titles are white on a stronger protocol tint, inactive hop columns sit at 70% opacity (was 45%), interface labels are larger and brighter, and wide or changed fields show their short names above the value
+- **Density control** — `S / M / L` in the drawer handle, `[` / `]`, or `Ctrl`+wheel inside the drawer switch between the old compact size, the new default, and the right panel's full size. The choice persists in `localStorage`
+- **Resizable drawer** — drag the handle bar to change the drawer height (200px to 60% of the viewport); `↺` restores the default. The height persists; the topology legend moves with it
+- **Expanded active hop** — the active hop renders at full size with a bit ruler while the other hops stay as thumbnails, so most questions are answered without looking at the right panel. Toggle with `e`
+- **Δ only** — hide every layer a hop does not touch (hop 0 keeps the full baseline). Toggle with `c`
+- **Cross-hop tracing** — hovering a field highlights the same field in every hop and in the right panel
+- **Field tooltip** — a styled tooltip replaces the native `<title>`: layer, field name, full value, previous value or "added" marker, bit range and byte offset
+- **Hex under the active hop** — `b` now also shows a dense hex strip below the active drawer column, linked to the same hover state
+- **Tests** — drawer geometry rewritten around a size-aware layout object with per-column widths; new cases for diff-only layout, label rules, byte offsets, tooltip placement and preference loading
+
+### CI
+
+- **GitHub Pages from CI** — `.github/workflows/pages.yml` lints, tests and builds the UI on every push and pull request, and deploys `ui/dist` to Pages on `main`. The committed `docs/` build and the `hooks/pre-commit` rebuild hook are gone; Vite writes to its default `ui/dist`
+
 ## [0.6.0] - 2026-09-17
 
 ### Wireshark-style packet views

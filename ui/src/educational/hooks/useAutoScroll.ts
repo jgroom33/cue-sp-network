@@ -4,7 +4,9 @@ import { prefersReducedMotion } from "./useAnimationDriver";
 /**
  * Keep the active hop centered in a horizontal scroller. Pauses while the
  * user is interacting with the scroller (pointer inside, or shortly after a
- * wheel event); `follow()` re-centers and resumes.
+ * wheel event); `follow()` re-centers and resumes. Re-centers whenever
+ * `targetFor` changes identity, so layout changes (density, expanded
+ * column) keep the active hop in view.
  */
 export function useAutoScroll(
   ref: React.RefObject<HTMLElement | null>,
@@ -13,20 +15,16 @@ export function useAutoScroll(
   enabled: boolean
 ) {
   const [userScrolled, setUserScrolled] = useState(false);
-  const targetRef = useRef(targetFor);
-  useEffect(() => {
-    targetRef.current = targetFor;
-  }, [targetFor]);
   const insideRef = useRef(false);
 
   const scrollToHop = useCallback(() => {
     const el = ref.current;
     if (!el) return;
     el.scrollTo({
-      left: targetRef.current(el.clientWidth),
+      left: targetFor(el.clientWidth),
       behavior: prefersReducedMotion() ? "auto" : "smooth",
     });
-  }, [ref]);
+  }, [ref, targetFor]);
 
   useEffect(() => {
     if (!enabled || userScrolled || insideRef.current) return;
@@ -42,7 +40,10 @@ export function useAutoScroll(
     const onLeave = () => {
       insideRef.current = false;
     };
-    const onWheel = () => setUserScrolled(true);
+    // Ctrl+wheel is the density zoom, not a scroll.
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) setUserScrolled(true);
+    };
     const onDown = () => setUserScrolled(true);
     el.addEventListener("pointerenter", onEnter);
     el.addEventListener("pointerleave", onLeave);

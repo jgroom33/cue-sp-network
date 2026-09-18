@@ -8,3 +8,6 @@ export { PacketDefs } from "./components/packet/PacketDefs";
 export { derivePacketModels } from "./packetModels";
 export type { HopModel } from "./packetModels";
 export { drawerHeight } from "./drawerLayout";
+export { PacketHoverProvider } from "./components/packet/PacketHoverContext";
+export { FieldTooltip } from "./components/packet/FieldTooltip";
+export { useDrawerPrefsPersistence } from "./hooks/useDrawerPrefsPersistence";

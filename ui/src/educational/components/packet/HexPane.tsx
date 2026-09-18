@@ -8,14 +8,18 @@ import { fieldKey } from "../../packetDiff";
 interface Props {
   bytes: SerializedPacket;
   diff?: PacketDiff;
+  /** Shorthand for 8 bytes per row without the ASCII column. */
   dense?: boolean;
+  perRow?: number;
+  ascii?: boolean;
   hoveredField?: string | null;
   onHoverField?: (key: string | null) => void;
 }
 
 /** Wireshark-style bytes pane: offset, hex, ASCII; bytes colored by layer. */
-export function HexPane({ bytes, diff, dense = false, hoveredField, onHoverField }: Props) {
-  const perRow = dense ? 8 : 16;
+export function HexPane({ bytes, diff, dense = false, perRow: perRowProp, ascii: asciiProp, hoveredField, onHoverField }: Props) {
+  const perRow = perRowProp ?? (dense ? 8 : 16);
+  const ascii = asciiProp ?? !dense;
   const rows = useMemo(() => toHexRows(bytes, perRow), [bytes, perRow]);
   const changed = useMemo(() => {
     const s = new Set<string>();
@@ -23,9 +27,10 @@ export function HexPane({ bytes, diff, dense = false, hoveredField, onHoverField
     return s;
   }, [diff]);
   const addedLayers = useMemo(() => new Set(diff?.addedLayers ?? []), [diff]);
+  const small = perRow <= 8;
 
   return (
-    <div className={`font-mono leading-[1.35] select-text ${dense ? "text-[9px]" : "text-[10.5px]"}`}
+    <div className={`font-mono leading-[1.35] select-text ${small ? "text-[9px]" : "text-[10.5px]"}`}
          onMouseLeave={onHoverField ? () => onHoverField(null) : undefined}>
       {rows.map((row) => (
         <div key={row.offset} className="flex items-baseline gap-2 whitespace-nowrap">
@@ -47,14 +52,14 @@ export function HexPane({ bytes, diff, dense = false, hoveredField, onHoverField
                     backgroundColor: isHover ? `${color}55` : isChanged ? `${color}30` : `${color}14`,
                   }}
                   onMouseEnter={onHoverField ? () => onHoverField(key) : undefined}
-                  title={`0x${c.offset.toString(16).padStart(4, "0")} · ${c.owner.layerId}.${c.owner.fieldId}`}
+                  title={`0x${c.offset.toString(16).padStart(4, "0")} · ${key}`}
                 >
                   {c.hex}
                 </span>
               );
             })}
           </span>
-          {!dense && (
+          {ascii && (
             <span className="text-gray-500 ml-1 tracking-tight">
               {row.cells.map((c) => c.ascii).join("")}
             </span>

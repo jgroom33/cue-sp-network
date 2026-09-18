@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useCallback } from "react";
 import type { HopModel } from "../../packetModels";
+import type { HoverAnchor } from "../../tooltipLayout";
 import { PacketSvg } from "./PacketSvg";
 import { HexPane } from "./HexPane";
+import { usePacketHover } from "./PacketHoverContext";
 import { protocolColors } from "../../../utils/colors";
 
 interface Props {
@@ -14,7 +16,12 @@ interface Props {
 
 /** Right-panel packet: full RFC grid for the active hop plus optional bytes pane. */
 export function PacketView({ model, hop, showBytes, speed, onToggleBytes }: Props) {
-  const [hovered, setHovered] = useState<string | null>(null);
+  const { hover, setHover } = usePacketHover();
+  const onHover = useCallback(
+    (key: string | null, anchor?: HoverAnchor) => setHover(key ? { key, hop, anchor } : null),
+    [hop, setHover]
+  );
+  const hovered = hover?.key ?? null;
   const total = model.bytes.bytes.length;
   const legend = Array.from(new Set(model.layers.map((l) => l.color)));
 
@@ -48,7 +55,7 @@ export function PacketView({ model, hop, showBytes, speed, onToggleBytes }: Prop
           ruler
           hopKey={hop}
           hoveredField={hovered}
-          onHoverField={setHovered}
+          onHoverField={onHover}
         />
       </div>
       <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[9px] text-gray-500">
@@ -61,7 +68,7 @@ export function PacketView({ model, hop, showBytes, speed, onToggleBytes }: Prop
       </div>
       {showBytes && (
         <div className="mt-2 pt-2 border-t border-gray-800 overflow-x-auto">
-          <HexPane bytes={model.bytes} diff={model.diff} hoveredField={hovered} onHoverField={setHovered} />
+          <HexPane bytes={model.bytes} diff={model.diff} hoveredField={hovered} onHoverField={onHover} />
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { protocolColors } from "../../../utils/colors";
 import type { PacketDiff } from "../../packetDiff";
 import { fieldKey } from "../../packetDiff";
@@ -7,30 +7,42 @@ import {
   GRID_BITS,
   RULER_H,
   SIZES,
+  fieldTextY,
   fitText,
   layoutPacket,
+  showFieldLabel,
   type LayerGeom,
+  type PacketDetail,
   type PacketSize,
   type SizeSpec,
 } from "../../packetSvgLayout";
+import type { HoverAnchor } from "../../tooltipLayout";
+
+export type HoverFieldHandler = (key: string | null, anchor?: HoverAnchor) => void;
 
 export interface PacketSvgProps {
   layers: PacketLayer[];
   diff?: PacketDiff;
   size: PacketSize;
-  detail: "compact" | "full";
+  detail: PacketDetail;
   active: boolean;
   /** Changes per hop in the panel so ghost/value keys remount and animate. */
   hopKey?: number;
   ruler?: boolean;
   hoveredField?: string | null;
-  onHoverField?: (key: string | null) => void;
+  onHoverField?: HoverFieldHandler;
+  /** Shown when no layer is visible (diff mode on a pure-forward hop). */
+  emptyLabel?: string;
   className?: string;
 }
 
 const alpha = (hex: string, a: string) => `${hex}${a}`;
 const TEXT = "#e5e7eb";
 const MUTED = "#9ca3af";
+const SUBTLE = "#d1d5db";
+const TITLE = "#f3f4f6";
+
+type ChangeMap = Map<string, { from: string; fromCompact: string; to: string; fromRaw: number; toRaw: number }>;
 
 function PacketSvgImpl({
   layers,
@@ -42,23 +54,35 @@ function PacketSvgImpl({
   ruler = false,
   hoveredField,
   onHoverField,
+  emptyLabel,
   className,
 }: PacketSvgProps) {
   const size = SIZES[sizeKey];
-  const geom = layoutPacket(layers, diff, sizeKey, { detail, ruler });
-  const added = new Set(diff?.addedLayers ?? []);
-  const changed = new Map(diff?.changedFields.map((c) => [fieldKey(c.layerId, c.fieldId), c]) ?? []);
+  const geom = useMemo(() => layoutPacket(layers, diff, sizeKey, { detail, ruler }), [layers, diff, sizeKey, detail, ruler]);
+  const added = useMemo(() => new Set(diff?.addedLayers ?? []), [diff]);
+  const changed: ChangeMap = useMemo(
+    () => new Map(diff?.changedFields.map((c) => [fieldKey(c.layerId, c.fieldId), c]) ?? []),
+    [diff]
+  );
+  const empty = geom.layers.length === 0 && geom.ghosts.length === 0;
+  const height = Math.max(geom.height, empty && emptyLabel ? size.stripH : 1);
 
   return (
     <svg
       className={`pkt-svg block overflow-visible ${className ?? ""}`}
       width={geom.width}
-      height={Math.max(geom.height, 1)}
-      viewBox={`0 0 ${geom.width} ${Math.max(geom.height, 1)}`}
+      height={height}
+      viewBox={`0 0 ${geom.width} ${height}`}
       fontFamily="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
       fontSize={size.font}
     >
       {ruler && <Ruler size={size} />}
+      {empty && emptyLabel && (
+        <text x={geom.width / 2} y={height / 2} textAnchor="middle" dominantBaseline="middle" fill="#6b7280"
+              fontStyle="italic">
+          {emptyLabel}
+        </text>
+      )}
       {geom.layers.map((g) => (
         <g key={g.layer.id} className="pkt-row" style={{ translate: `0 ${g.y}px` }}>
           <g className={added.has(g.layer.id) ? "pkt-anim-enter" : undefined}
@@ -66,6 +90,7 @@ function PacketSvgImpl({
             <LayerBody
               geom={g}
               size={size}
+              sizeKey={sizeKey}
               detail={detail}
               active={active}
               changed={changed}
@@ -78,7 +103,8 @@ function PacketSvgImpl({
       ))}
       {geom.ghosts.map((g) => (
         <g key={`ghost-${g.layer.id}-${hopKey}`} className="pkt-ghost" style={{ translate: `0 ${g.y}px` }}>
-          <LayerBody geom={g} size={size} detail={detail} active={false} changed={new Map()} hopKey={hopKey} ghost />
+          <LayerBody geom={g} size={size} sizeKey={sizeKey} detail={detail} active={false} changed={new Map()}
+                     hopKey={hopKey} ghost />
         </g>
       ))}
     </svg>
@@ -106,35 +132,38 @@ function Ruler({ size }: { size: SizeSpec }) {
 interface BodyProps {
   geom: LayerGeom;
   size: SizeSpec;
-  detail: "compact" | "full";
+  sizeKey: PacketSize;
+  detail: PacketDetail;
   active: boolean;
-  changed: Map<string, { from: string; fromCompact: string; to: string; fromRaw: number; toRaw: number }>;
+  changed: ChangeMap;
   hopKey: number;
   ghost?: boolean;
   hoveredField?: string | null;
-  onHoverField?: (key: string | null) => void;
+  onHoverField?: HoverFieldHandler;
 }
 
-function LayerBody({ geom, size, detail, active, changed, hopKey, ghost, hoveredField, onHoverField }: BodyProps) {
+function LayerBody({ geom, size, sizeKey, detail, active, changed, hopKey, ghost, hoveredField, onHoverField }: BodyProps) {
   const { layer } = geom;
   const color = protocolColors[layer.color];
   const W = GRID_BITS * size.bitW;
   const titleH = layer.continuation ? 0 : size.titleH;
-  const full = detail === "full";
+  const fullSize = sizeKey === "full";
+  // Prefer the long display form whenever the cell is roomy enough to read it.
+  const preferDisplay = size.labels !== "none" || detail === "full";
 
   return (
     <g>
       {titleH > 0 && (
         <g>
-          <rect x={0} y={0} width={W} height={titleH} fill={alpha(color, "40")} stroke={color} strokeWidth={1}
-                rx={full ? 2 : 1} shapeRendering="crispEdges" />
+          <rect x={0} y={0} width={W} height={titleH} fill={alpha(color, "59")} stroke={color} strokeWidth={1}
+                rx={fullSize ? 2 : 1} shapeRendering="crispEdges" />
           <text className="pkt-text" x={4} y={titleH / 2 + 0.5} dominantBaseline="middle"
-                fill={color} fontWeight={700} fontSize={size.font}>
+                fill={TITLE} fontWeight={700} fontSize={size.font}>
             {fitText(layer.name, layer.subtitle ? W * 0.45 : W - 8, size.font)}
           </text>
           {layer.subtitle && (
             <text className="pkt-text" x={W - 4} y={titleH / 2 + 0.5} dominantBaseline="middle" textAnchor="end"
-                  fill={MUTED} fontSize={size.font * 0.9}>
+                  fill={SUBTLE} fontSize={size.font * 0.9}>
               {fitText(layer.subtitle, W * 0.52, size.font * 0.9)}
             </text>
           )}
@@ -161,20 +190,19 @@ function LayerBody({ geom, size, detail, active, changed, hopKey, ghost, hovered
           {geom.fields.map((fg) => {
             const ch = changed.get(fg.key);
             const isHover = hoveredField === fg.key;
-            const valueFont = full ? size.font : size.font;
-            const label = full ? fg.field.short : "";
+            const valueFont = size.font;
             const kind = fg.field.role === "addr" ? (fg.field.bits === 48 ? "mac" : "ip") : "generic";
             const avail = fg.labelW - 4;
             const fits = (t: string) => t.length * valueFont * 0.6 <= avail;
-            // Prefer the full display; fall back to the compact form before ellipsizing.
-            const value = full && fits(fg.field.display) ? fg.field.display : fg.field.compact;
+            const value = preferDisplay && fits(fg.field.display) ? fg.field.display : fg.field.compact;
             const valueText = fitText(value, avail, valueFont, kind);
-            const labelText = label ? fitText(label, fg.labelW - 4, size.font * 0.75) : "";
-            const valueY = full && labelText ? fg.labelY + size.rowH * 0.18 : fg.labelY;
+            const labelFont = size.font * 0.75;
+            const labelText = showFieldLabel(fg.field, !!ch, detail, size)
+              ? fitText(fg.field.short, fg.labelW - 4, labelFont)
+              : "";
+            const { labelY, valueY } = fieldTextY(fg.labelY, size, !!labelText);
             return (
-              <g key={fg.key}
-                 onMouseEnter={onHoverField ? () => onHoverField(fg.key) : undefined}
-                 onMouseLeave={onHoverField ? () => onHoverField(null) : undefined}>
+              <g key={fg.key}>
                 <path
                   d={fg.path}
                   fill={alpha(color, ch ? "3d" : isHover ? "33" : "1f")}
@@ -185,12 +213,15 @@ function LayerBody({ geom, size, detail, active, changed, hopKey, ghost, hovered
                   style={ch ? ({ "--pkt-flash-end": color } as React.CSSProperties) : undefined}
                   filter={active && ch ? "url(#field-glow)" : undefined}
                   shapeRendering="crispEdges"
-                >
-                  <title>{`${fg.field.name}: ${fg.field.display}${ch ? ` (was ${ch.from})` : ""}`}</title>
-                </path>
+                  aria-label={`${fg.field.name}: ${fg.field.display}`}
+                  onMouseEnter={
+                    onHoverField ? (e) => onHoverField(fg.key, e.currentTarget.getBoundingClientRect()) : undefined
+                  }
+                  onMouseLeave={onHoverField ? () => onHoverField(null) : undefined}
+                />
                 {labelText && (
-                  <text className="pkt-text" x={fg.labelX} y={fg.labelY - size.rowH * 0.24} textAnchor="middle"
-                        dominantBaseline="middle" fill={MUTED} fontSize={size.font * 0.75} pointerEvents="none">
+                  <text className="pkt-text" x={fg.labelX} y={labelY} textAnchor="middle"
+                        dominantBaseline="middle" fill={MUTED} fontSize={labelFont} pointerEvents="none">
                     {labelText}
                   </text>
                 )}
@@ -208,7 +239,7 @@ function LayerBody({ geom, size, detail, active, changed, hopKey, ghost, hovered
                   <g key={`${fg.key}:old:${hopKey}`} className="pkt-val-out">
                     <text className="pkt-text" x={fg.labelX} y={valueY} textAnchor="middle" dominantBaseline="middle"
                           fill="#fca5a5" fontSize={valueFont} pointerEvents="none">
-                      {fitText(full && fits(ch.from) ? ch.from : ch.fromCompact, avail, valueFont, kind)}
+                      {fitText(preferDisplay && fits(ch.from) ? ch.from : ch.fromCompact, avail, valueFont, kind)}
                     </text>
                   </g>
                 )}

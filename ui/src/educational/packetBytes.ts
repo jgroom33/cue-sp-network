@@ -139,6 +139,28 @@ export function serializePacket(layers: PacketLayer[]): SerializedPacket {
   return { bytes: out, owners, layerRanges };
 }
 
+export interface FieldByteRange {
+  byteStart: number;
+  byteEnd: number; // exclusive
+  bitInByte: number; // bit offset of the field within its first byte
+}
+
+/** Absolute byte span of a field given its bit offset within its layer. */
+export function fieldByteRange(
+  pkt: SerializedPacket,
+  layerId: string,
+  bitStart: number,
+  bits: number
+): FieldByteRange | undefined {
+  const range = pkt.layerRanges.get(layerId);
+  if (!range) return undefined;
+  return {
+    byteStart: range[0] + Math.floor(bitStart / 8),
+    byteEnd: range[0] + Math.ceil((bitStart + bits) / 8),
+    bitInByte: bitStart % 8,
+  };
+}
+
 export function toHexRows(pkt: SerializedPacket, perRow = 16): HexRow[] {
   const rows: HexRow[] = [];
   for (let start = 0; start < pkt.bytes.length; start += perRow) {

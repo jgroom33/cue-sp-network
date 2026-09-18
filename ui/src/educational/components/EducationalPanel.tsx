@@ -112,6 +112,20 @@ export function EducationalPanel({ topo, configs, state, models, dispatch }: Pro
         case "B":
           dispatch({ type: "TOGGLE_BYTES" });
           break;
+        case "[":
+          dispatch({ type: "STEP_DRAWER_SIZE", dir: -1 });
+          break;
+        case "]":
+          dispatch({ type: "STEP_DRAWER_SIZE", dir: 1 });
+          break;
+        case "e":
+        case "E":
+          dispatch({ type: "TOGGLE_DRAWER_EXPAND" });
+          break;
+        case "c":
+        case "C":
+          dispatch({ type: "TOGGLE_DRAWER_DIFF_ONLY" });
+          break;
         case "Escape":
           if (showHelp) {
             setShowHelp(false);
@@ -256,6 +270,9 @@ export function EducationalPanel({ topo, configs, state, models, dispatch }: Pro
         <span>←→: step</span>
         <span>+−: speed</span>
         <span>d: drawer</span>
+        <span>[ ]: size</span>
+        <span>e: expand</span>
+        <span>c: Δ only</span>
         <span>b: bytes</span>
         <span>Esc: back</span>
         <span>?: help</span>

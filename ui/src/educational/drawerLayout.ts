@@ -1,43 +1,85 @@
-/** Fixed geometry for the side-by-side packet drawer (no DOM measurement). */
+import { GRID_BITS, SIZES, type PacketSize } from "./packetSvgLayout";
 
-export const COLUMN_W = 224;
+/** Geometry for the side-by-side packet drawer (no DOM measurement). */
+
 export const BADGE_W = 96;
-export const PAD_X = 16;
+export const PAD_X = 16; // scroller outer padding
+export const COL_PAD = 16; // inner padding around each packet grid
 export const CHAIN_H = 74;
 export const NODE_R = 15;
-export const DRAWER_OPEN_H = 300;
 export const DRAWER_HANDLE_H = 28;
+export const DRAWER_DEFAULT_H = 300;
+export const DRAWER_MIN_H = 200;
+export const DRAWER_MAX_VH = 0.6;
 
-export function drawerHeight(open: boolean): number {
-  return open ? DRAWER_OPEN_H + DRAWER_HANDLE_H : DRAWER_HANDLE_H;
+/** Column width for a packet drawn at `size`: grid plus inner padding. */
+export function columnWidthFor(size: PacketSize): number {
+  return GRID_BITS * SIZES[size].bitW + 2 * COL_PAD;
 }
 
-/** Left edge of column i. `hasOrigin` reserves a badge slot before column 0. */
-export function columnX(i: number, hasOrigin: boolean): number {
-  return PAD_X + (hasOrigin ? BADGE_W : 0) + i * (COLUMN_W + BADGE_W);
+export function clampDrawerHeight(h: number, viewportH: number): number {
+  const max = Math.max(DRAWER_MIN_H, Math.floor(viewportH * DRAWER_MAX_VH));
+  return Math.min(max, Math.max(DRAWER_MIN_H, Math.round(h)));
 }
 
-export function columnCenterX(i: number, hasOrigin: boolean): number {
-  return columnX(i, hasOrigin) + COLUMN_W / 2;
+/** Total vertical space the drawer occupies (body plus handle). */
+export function drawerHeight(open: boolean, bodyH: number): number {
+  return open ? bodyH + DRAWER_HANDLE_H : DRAWER_HANDLE_H;
 }
 
-/** Center of the badge slot between column i-1 and i (i >= 1), or the origin slot for i = 0. */
-export function badgeCenterX(i: number, hasOrigin: boolean): number {
-  return columnX(i, hasOrigin) - BADGE_W / 2;
+export interface DrawerLayoutInput {
+  n: number;
+  hasOrigin: boolean; // reserve a badge slot before column 0
+  size: PacketSize;
+  activeHop?: number;
+  expandActive?: boolean; // render column `activeHop` at "full"
 }
 
-export function totalWidth(n: number, hasOrigin: boolean): number {
-  if (n <= 0) return PAD_X * 2;
-  return PAD_X * 2 + (hasOrigin ? BADGE_W : 0) + n * COLUMN_W + (n - 1) * BADGE_W;
+export interface DrawerLayout {
+  n: number;
+  hasOrigin: boolean;
+  size: PacketSize;
+  sizeFor(i: number): PacketSize;
+  columnWidth(i: number): number;
+  /** Left edge of column i. */
+  columnX(i: number): number;
+  columnCenterX(i: number): number;
+  /** Center of the badge slot before column i (the origin slot for i = 0). */
+  badgeCenterX(i: number): number;
+  totalWidth: number;
+  scrollTargetLeft(i: number, viewportW: number): number;
 }
 
-export function scrollTargetLeft(
-  i: number,
-  viewportW: number,
-  n: number,
-  hasOrigin: boolean
-): number {
-  const max = Math.max(0, totalWidth(n, hasOrigin) - viewportW);
-  const target = columnCenterX(i, hasOrigin) - viewportW / 2;
-  return Math.min(Math.max(0, target), max);
+export function makeDrawerLayout(input: DrawerLayoutInput): DrawerLayout {
+  const { n, hasOrigin, size, activeHop = -1, expandActive = false } = input;
+  const sizeFor = (i: number): PacketSize => (expandActive && i === activeHop ? "full" : size);
+  const widths: number[] = [];
+  const lefts: number[] = [];
+  let x = PAD_X + (hasOrigin ? BADGE_W : 0);
+  for (let i = 0; i < n; i++) {
+    const w = columnWidthFor(sizeFor(i));
+    widths.push(w);
+    lefts.push(x);
+    x += w + BADGE_W;
+  }
+  const totalWidth = n <= 0 ? PAD_X * 2 : x - BADGE_W + PAD_X;
+  const columnWidth = (i: number) => widths[i] ?? columnWidthFor(size);
+  const columnX = (i: number) => lefts[i] ?? PAD_X + (hasOrigin ? BADGE_W : 0);
+  const columnCenterX = (i: number) => columnX(i) + columnWidth(i) / 2;
+  return {
+    n,
+    hasOrigin,
+    size,
+    sizeFor,
+    columnWidth,
+    columnX,
+    columnCenterX,
+    badgeCenterX: (i) => columnX(i) - BADGE_W / 2,
+    totalWidth,
+    scrollTargetLeft(i, viewportW) {
+      const max = Math.max(0, totalWidth - viewportW);
+      const target = columnCenterX(i) - viewportW / 2;
+      return Math.min(Math.max(0, target), max);
+    },
+  };
 }

@@ -17,6 +17,9 @@ import {
   initialEducationalState,
   derivePacketModels,
   drawerHeight,
+  PacketHoverProvider,
+  FieldTooltip,
+  useDrawerPrefsPersistence,
 } from "./educational";
 
 const ALL_ROLES = new Set<DeviceRole>(["PE", "P", "RR", "ASBR", "AGG", "CE", "NID", "PCE", "EXTERNAL"]);
@@ -41,6 +44,7 @@ export default function App() {
     maxHop,
     dispatch: eduDispatch,
   });
+  useDrawerPrefsPersistence(eduState);
 
   const toggleRole = useCallback((role: DeviceRole) => {
     setVisibleRoles((prev) => {
@@ -116,8 +120,10 @@ export default function App() {
   const { topo, device_configs } = data.network;
 
   return (
+    <PacketHoverProvider>
     <div className="h-screen flex overflow-hidden bg-gray-950">
       <PacketDefs />
+      <FieldTooltip models={packetModels} />
       {/* Sidebar — topology controls */}
       <div className="w-64 flex-shrink-0 flex flex-col">
         <Sidebar
@@ -145,7 +151,9 @@ export default function App() {
           overlayData={overlayData!}
           activeOverlays={activeOverlays}
           onNodePositionsUpdate={setNodePositions}
-          legendBottomOffset={eduState.activeScenario ? drawerHeight(eduState.drawerOpen) : 0}
+          legendBottomOffset={
+            eduState.activeScenario ? drawerHeight(eduState.drawerOpen, eduState.drawerHeight) : 0
+          }
           educationalOverlay={
             eduState.activeScenario ? (
               <>
@@ -179,6 +187,11 @@ export default function App() {
             open={eduState.drawerOpen}
             clock={clock}
             dispatch={eduDispatch}
+            size={eduState.drawerSize}
+            bodyHeight={eduState.drawerHeight}
+            showBytes={eduState.showBytes}
+            expandActive={eduState.drawerExpand}
+            diffOnly={eduState.drawerDiffOnly}
           />
         )}
       </div>
@@ -194,5 +207,6 @@ export default function App() {
         />
       </div>
     </div>
+    </PacketHoverProvider>
   );
 }

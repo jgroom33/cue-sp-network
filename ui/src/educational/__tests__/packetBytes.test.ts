@@ -4,6 +4,7 @@ import {
   packFields,
   ipv4Checksum,
   serializePacket,
+  fieldByteRange,
   toHexRows,
   macToNumber,
   numberToMac,
@@ -66,6 +67,19 @@ describe("serializePacket (known answer)", () => {
     expect(rows[0].cells[0].hex).toBe("02");
     expect(rows[0].offset).toBe(0);
     expect(rows[1].offset).toBe(16);
+  });
+});
+
+describe("fieldByteRange", () => {
+  const pkt = serializePacket(buildLayers(headers));
+  it("maps a field's bit offset within its layer to packet bytes", () => {
+    expect(fieldByteRange(pkt, "ip", 64, 8)).toEqual({ byteStart: 18 + 8, byteEnd: 18 + 9, bitInByte: 0 });
+    expect(fieldByteRange(pkt, "ip", 8, 6)).toEqual({ byteStart: 19, byteEnd: 20, bitInByte: 0 });
+    expect(fieldByteRange(pkt, "mpls:transport", 20, 3)).toEqual({ byteStart: 16, byteEnd: 17, bitInByte: 4 });
+    expect(fieldByteRange(pkt, "eth", 48, 48)).toEqual({ byteStart: 6, byteEnd: 12, bitInByte: 0 });
+  });
+  it("returns undefined for a layer that is not on the wire", () => {
+    expect(fieldByteRange(pkt, "vxlan", 0, 8)).toBeUndefined();
   });
 });
 

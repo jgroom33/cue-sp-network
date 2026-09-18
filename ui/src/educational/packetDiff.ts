@@ -66,6 +66,12 @@ export function fieldKey(layerId: string, fieldId: string): string {
   return `${layerId}.${fieldId}`;
 }
 
+/** Inverse of fieldKey. Layer ids may contain dots; field ids never do. */
+export function splitFieldKey(key: string): [layerId: string, fieldId: string] {
+  const i = key.lastIndexOf(".");
+  return i < 0 ? [key, ""] : [key.slice(0, i), key.slice(i + 1)];
+}
+
 function semanticFor(layer: PacketLayer, fieldId: string): ChangeSemantic {
   if (layer.kind === "mpls" && fieldId === "label") return "swap";
   if (fieldId === "ttl") return "ttl";
