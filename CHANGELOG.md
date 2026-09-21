@@ -17,6 +17,7 @@
 ### CI
 
 - **GitHub Pages from CI** — `.github/workflows/pages.yml` lints, tests and builds the UI on every push and pull request, and deploys `ui/dist` to Pages on `main`. The committed `docs/` build and the `hooks/pre-commit` rebuild hook are gone; Vite writes to its default `ui/dist`
+- **Public mirror** — `jgroom33/cue-sp-network` is a read-only mirror; `scripts/sync-mirror.sh` force-pushes `main` and tags there from a maintainer's machine, so no credentials are stored in GitHub
 - **Dependabot cleanup** — the three open Dependabot PRs were superseded by one change aligning the `vite` range with the locked 8.3.0; the lockfile already exceeded every requested version and `npm audit` is clean
 
 ## [0.6.0] - 2026-09-17

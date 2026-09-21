@@ -95,6 +95,16 @@ npm run build      # output in ui/dist
 npm run preview
 ```
 
+### Public mirror
+
+`jgroom33/cue-sp-network` is a read-only public mirror of this repository. Open pull requests here, not on the mirror. After a merge, a maintainer syncs it with their own git credentials, so no tokens or keys live in GitHub:
+
+```bash
+scripts/sync-mirror.sh          # force-pushes origin/main and tags to the github remote
+```
+
+The script expects the `origin` remote to point at this repository and a `github` remote at the mirror. The mirror runs its own Pages deploy on each sync.
+
 ---
 
 ## Educational Scenarios
